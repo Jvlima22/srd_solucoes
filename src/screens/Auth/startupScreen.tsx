@@ -1,5 +1,5 @@
 /* eslint-disable jsx-a11y/alt-text */
-import { Image, View } from 'react-native'
+import { Image, ScrollView, View } from 'react-native'
 
 import LogoIcon from '@assets/icon.png'
 import NavigationIcon from '@assets/Navigation.png'
@@ -18,6 +18,9 @@ export function StartupScreen({ navigation }: Props) {
   }
   return (
     <ContainerX>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+      >
       <View className="flex-1 justify-between p-5">
         <View className="">
           <Image
@@ -104,12 +107,13 @@ export function StartupScreen({ navigation }: Props) {
           </View>
         </View>
 
-        <View className="">
+        <View className="mt-5">
           <Button className="h-14" variant="default" onPress={handleStart}>
             <H3 className="text-grayscale-1">Começar</H3>
           </Button>
         </View>
       </View>
+      </ScrollView>
     </ContainerX>
   )
 }

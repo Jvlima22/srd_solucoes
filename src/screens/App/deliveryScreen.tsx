@@ -2,28 +2,44 @@
 import { Button } from '@components/Button'
 import { ContainerAppCpX } from '@components/ContainerAppCpX'
 import { H1, H3, P } from '@components/Typography'
-import { Image, ScrollView, View } from 'react-native'
+import { FlatList, Image, ScrollView, View } from 'react-native'
 
 import ArrowRight from '@assets/Arrow-right.png'
 import ArrowLeft from '@assets/Arrow-left.png'
 import ArrowUp from '@assets/Arrow-up.png'
 import ArrowDown from '@assets/Arrow-down.png'
 import CurvedArrow from '@assets/Curved-Arrow.png'
+import { useEffect, useState } from 'react'
+import { getInfoEntrega } from '@/service/services'
 
 export function DeliveryScreen() {
+  const [entregas, setEntregas] = useState<deliveryDTO[]>([])
+  const fetchData = async () => {
+    const response = await getInfoEntrega();
+
+    setEntregas(response.data)
+  }
+
+  useEffect(() => {
+    fetchData()
+  }, [])
   return (
     <ContainerAppCpX>
       <View className="flex-1 p-7">
         <H1>Relação de Entrega</H1>
 
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <View className="mt-8">
+        <FlatList 
+          data={entregas}
+          keyExtractor={(item, index) => String(item.cte+"srp"+index)}
+          showsVerticalScrollIndicator={false}
+          renderItem={({ item }) => (
+            <View className="mt-8">
             <View className="border border-zinc-600 p-5">
               <View className="mb-5 w-1/2 flex-row items-center justify-center gap-3 self-center rounded-xl bg-blue-900 p-3">
                 <P className="text-white">Documento</P>
 
                 <View className="h-8 min-w-8 items-center justify-center rounded-full bg-white p-1">
-                  <P>400</P>
+                  <P>{item.documento}</P>
                 </View>
               </View>
 
@@ -72,6 +88,11 @@ export function DeliveryScreen() {
               </View>
             </View>
           </View>
+          )}
+        />
+
+        {/* <ScrollView showsVerticalScrollIndicator={false}>
+          
 
           <View className="mt-8">
             <View className="border border-zinc-600 p-5">
@@ -172,7 +193,7 @@ export function DeliveryScreen() {
               </View>
             </View>
           </View>
-        </ScrollView>
+        </ScrollView> */}
       </View>
     </ContainerAppCpX>
   )
