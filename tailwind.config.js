@@ -15,6 +15,7 @@ module.exports = {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
+        blueSystem: 'hsl(var(--blue-system))',
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         primary: {
@@ -44,6 +45,9 @@ module.exports = {
         card: {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
+        },
+        system: {
+          DEFAULT: '#27408B'
         },
         chathams_blue: {
           50: '#eefaff',

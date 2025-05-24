@@ -1,15 +1,15 @@
-import { View } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { P } from './Typography'
+import { View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { P } from "./Typography";
 
 type Props = {
-  children: React.ReactNode
-}
+  children: React.ReactNode;
+};
 export function ContainerAppCpX({ children }: Props) {
-  const insets = useSafeAreaInsets()
+  const insets = useSafeAreaInsets();
   return (
     <View
-      className="bg-grayscale-1 flex-1"
+      className="flex-1 bg-grayscale-1"
       style={{
         // paddingTop: insets.top,
         paddingBottom: insets.bottom,
@@ -21,5 +21,5 @@ export function ContainerAppCpX({ children }: Props) {
 
       <P className="ml-10">© SRP Sistema - 2025</P>
     </View>
-  )
+  );
 }

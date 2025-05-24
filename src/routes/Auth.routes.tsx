@@ -1,8 +1,8 @@
-import { createNativeStackNavigator } from '@react-navigation/native-stack'
-import { SignInScreen } from '@screens/Auth/signInScreen'
-import { StartupScreen } from '@screens/Auth/startupScreen'
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { SignInScreen } from "@screens/Auth/signInScreen";
+import { StartupScreen } from "@screens/Auth/startupScreen";
 
-const { Navigator, Screen } = createNativeStackNavigator<RootStackParamList>()
+const { Navigator, Screen } = createNativeStackNavigator<RootStackParamList>();
 export function AuthRoutes() {
   return (
     <Navigator>
@@ -18,5 +18,5 @@ export function AuthRoutes() {
         options={{ headerShown: false }}
       />
     </Navigator>
-  )
+  );
 }

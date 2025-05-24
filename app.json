@@ -3,29 +3,33 @@
     "name": "SRP Soluções",
     "slug": "srpSolucoes",
     "version": "1.0.0",
+    "orientation": "portrait",
     "icon": "./assets/icon.png",
     "splash": {
       "image": "./assets/logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "web": {
-      "bundler": "metro"
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "ios": {
+      "bundleIdentifier": "com.dsvmTecnology.bsnapp",
+      "supportsTablet": false
     },
     "android": {
-      "package": "com.dykson.bsnapp"
-    },
-    "ios": {
-      "bundleIdentifier": "com.dykson.bsnapp"
+      "package": "com.dsvmTecnology.bsnapp",
+      "edgeToEdgeEnabled": true
     },
     "extra": {
       "eas": {
         "projectId": "06c0d00e-747e-498a-944c-8cafd9e468dc"
       }
     },
-    "runtimeVersion": "1.0.0",
     "updates": {
       "url": "https://u.expo.dev/06c0d00e-747e-498a-944c-8cafd9e468dc"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
     }
   }
 }

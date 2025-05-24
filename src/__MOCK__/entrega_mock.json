@@ -1,0 +1,382 @@
+[
+  {
+    "documento": 11,
+    "frete": 1,
+    "cte": "Sem informação",
+    "destinatario": "Teste",
+    "cidade": "DIADEMA",
+    "uf": "SP",
+    "status": "EM ABERTO",
+    "ocorrencia": "Com Registro"
+  },
+  {
+    "documento": 12,
+    "frete": 1,
+    "cte": "Sem informação",
+    "destinatario": "Teste",
+    "cidade": "DIADEMA",
+    "uf": "SP",
+    "status": "EM ABERTO",
+    "ocorrencia": "Com Registro"
+  },
+  {
+    "documento": 18,
+    "frete": 1,
+    "cte": "Sem informação",
+    "destinatario": "Teste",
+    "cidade": "DIADEMA",
+    "uf": "SP",
+    "status": "EM ABERTO",
+    "ocorrencia": "Com Registro"
+  },
+  {
+    "documento": 11,
+    "frete": 2,
+    "cte": "Sem informação",
+    "destinatario": "Teste",
+    "cidade": "DIADEMA",
+    "uf": "SP",
+    "status": "EM ABERTO",
+    "ocorrencia": "Com Registro"
+  },
+  {
+    "documento": 16,
+    "frete": 2,
+    "cte": "Sem informação",
+    "destinatario": "Teste",
+    "cidade": "DIADEMA",
+    "uf": "SP",
+    "status": "EM ABERTO",
+    "ocorrencia": "Com Registro"
+  },
+  {
+    "documento": 20,
+    "frete": 2,
+    "cte": "Sem informação",
+    "destinatario": "Teste",
+    "cidade": "DIADEMA",
+    "uf": "SP",
+    "status": "EM ABERTO",
+    "ocorrencia": "Com Registro"
+  },
+  {
+    "documento": 11,
+    "frete": 2,
+    "cte": "Sem informação",
+    "destinatario": "Teste",
+    "cidade": "DIADEMA",
+    "uf": "SP",
+    "status": "EM ABERTO",
+    "ocorrencia": "Com Registro"
+  },
+  {
+    "documento": 16,
+    "frete": 2,
+    "cte": "Sem informação",
+    "destinatario": "Teste",
+    "cidade": "DIADEMA",
+    "uf": "SP",
+    "status": "EM ABERTO",
+    "ocorrencia": "Com Registro"
+  },
+  {
+    "documento": 20,
+    "frete": 2,
+    "cte": "Sem informação",
+    "destinatario": "Teste",
+    "cidade": "DIADEMA",
+    "uf": "SP",
+    "status": "EM ABERTO",
+    "ocorrencia": "Com Registro"
+  },
+  {
+    "documento": 11,
+    "frete": 1,
+    "cte": "Sem informação",
+    "destinatario": "Teste",
+    "cidade": "DIADEMA",
+    "uf": "SP",
+    "status": "EM ABERTO",
+    "ocorrencia": "Com Registro"
+  },
+  {
+    "documento": 12,
+    "frete": 1,
+    "cte": "Sem informação",
+    "destinatario": "Teste",
+    "cidade": "DIADEMA",
+    "uf": "SP",
+    "status": "EM ABERTO",
+    "ocorrencia": "Com Registro"
+  },
+  {
+    "documento": 18,
+    "frete": 1,
+    "cte": "Sem informação",
+    "destinatario": "Teste",
+    "cidade": "DIADEMA",
+    "uf": "SP",
+    "status": "EM ABERTO",
+    "ocorrencia": "Com Registro"
+  },
+  {
+    "documento": 11,
+    "frete": 2,
+    "cte": "Sem informação",
+    "destinatario": "Teste",
+    "cidade": "DIADEMA",
+    "uf": "SP",
+    "status": "EM ABERTO",
+    "ocorrencia": "Com Registro"
+  },
+  {
+    "documento": 16,
+    "frete": 2,
+    "cte": "Sem informação",
+    "destinatario": "Teste",
+    "cidade": "DIADEMA",
+    "uf": "SP",
+    "status": "EM ABERTO",
+    "ocorrencia": "Com Registro"
+  },
+  {
+    "documento": 20,
+    "frete": 2,
+    "cte": "Sem informação",
+    "destinatario": "Teste",
+    "cidade": "DIADEMA",
+    "uf": "SP",
+    "status": "EM ABERTO",
+    "ocorrencia": "Com Registro"
+  },
+  {
+    "documento": 1,
+    "frete": 3,
+    "cte": "Sem informação",
+    "destinatario": "Teste",
+    "cidade": "DIADEMA",
+    "uf": "SP",
+    "status": "EM ABERTO",
+    "ocorrencia": "Com Registro"
+  },
+  {
+    "documento": 15,
+    "frete": 3,
+    "cte": "Sem informação",
+    "destinatario": "Teste",
+    "cidade": "DIADEMA",
+    "uf": "SP",
+    "status": "EM ABERTO",
+    "ocorrencia": "Com Registro"
+  },
+  {
+    "documento": 19,
+    "frete": 3,
+    "cte": "Sem informação",
+    "destinatario": "Teste",
+    "cidade": "DIADEMA",
+    "uf": "SP",
+    "status": "EM ABERTO",
+    "ocorrencia": "Com Registro"
+  },
+  {
+    "documento": 11,
+    "frete": 2,
+    "cte": "Sem informação",
+    "destinatario": "Teste",
+    "cidade": "DIADEMA",
+    "uf": "SP",
+    "status": "EM ABERTO",
+    "ocorrencia": "Com Registro"
+  },
+  {
+    "documento": 16,
+    "frete": 2,
+    "cte": "Sem informação",
+    "destinatario": "Teste",
+    "cidade": "DIADEMA",
+    "uf": "SP",
+    "status": "EM ABERTO",
+    "ocorrencia": "Com Registro"
+  },
+  {
+    "documento": 20,
+    "frete": 2,
+    "cte": "Sem informação",
+    "destinatario": "Teste",
+    "cidade": "DIADEMA",
+    "uf": "SP",
+    "status": "EM ABERTO",
+    "ocorrencia": "Com Registro"
+  },
+  {
+    "documento": 11,
+    "frete": 2,
+    "cte": "Sem informação",
+    "destinatario": "Teste",
+    "cidade": "DIADEMA",
+    "uf": "SP",
+    "status": "EM ABERTO",
+    "ocorrencia": "Com Registro"
+  },
+  {
+    "documento": 16,
+    "frete": 2,
+    "cte": "Sem informação",
+    "destinatario": "Teste",
+    "cidade": "DIADEMA",
+    "uf": "SP",
+    "status": "EM ABERTO",
+    "ocorrencia": "Com Registro"
+  },
+  {
+    "documento": 20,
+    "frete": 2,
+    "cte": "Sem informação",
+    "destinatario": "Teste",
+    "cidade": "DIADEMA",
+    "uf": "SP",
+    "status": "EM ABERTO",
+    "ocorrencia": "Com Registro"
+  },
+  {
+    "documento": 11,
+    "frete": 2,
+    "cte": "Sem informação",
+    "destinatario": "Teste",
+    "cidade": "DIADEMA",
+    "uf": "SP",
+    "status": "EM ABERTO",
+    "ocorrencia": "Com Registro"
+  },
+  {
+    "documento": 16,
+    "frete": 2,
+    "cte": "Sem informação",
+    "destinatario": "Teste",
+    "cidade": "DIADEMA",
+    "uf": "SP",
+    "status": "EM ABERTO",
+    "ocorrencia": "Com Registro"
+  },
+  {
+    "documento": 20,
+    "frete": 2,
+    "cte": "Sem informação",
+    "destinatario": "Teste",
+    "cidade": "DIADEMA",
+    "uf": "SP",
+    "status": "EM ABERTO",
+    "ocorrencia": "Com Registro"
+  },
+  {
+    "documento": 11,
+    "frete": 1,
+    "cte": "Sem informação",
+    "destinatario": "Teste",
+    "cidade": "DIADEMA",
+    "uf": "SP",
+    "status": "EM ABERTO",
+    "ocorrencia": "Com Registro"
+  },
+  {
+    "documento": 12,
+    "frete": 1,
+    "cte": "Sem informação",
+    "destinatario": "Teste",
+    "cidade": "DIADEMA",
+    "uf": "SP",
+    "status": "EM ABERTO",
+    "ocorrencia": "Com Registro"
+  },
+  {
+    "documento": 18,
+    "frete": 1,
+    "cte": "Sem informação",
+    "destinatario": "Teste",
+    "cidade": "DIADEMA",
+    "uf": "SP",
+    "status": "EM ABERTO",
+    "ocorrencia": "Com Registro"
+  },
+  {
+    "documento": 17,
+    "frete": 4,
+    "cte": "Sem informação",
+    "destinatario": "Teste",
+    "cidade": "DIADEMA",
+    "uf": "SP",
+    "status": "EM ABERTO",
+    "ocorrencia": "Sem Registro"
+  },
+  {
+    "documento": null,
+    "frete": 5,
+    "cte": "Sem informação",
+    "destinatario": "Teste",
+    "cidade": "DIADEMA",
+    "uf": "SP",
+    "status": "EM ABERTO",
+    "ocorrencia": "Sem Registro"
+  },
+  {
+    "documento": null,
+    "frete": 6,
+    "cte": "Sem informação",
+    "destinatario": "Teste",
+    "cidade": "DIADEMA",
+    "uf": "SP",
+    "status": "EM ABERTO",
+    "ocorrencia": "Sem Registro"
+  },
+  {
+    "documento": null,
+    "frete": 7,
+    "cte": "Sem informação",
+    "destinatario": "Teste",
+    "cidade": "DIADEMA",
+    "uf": "SP",
+    "status": "EM ABERTO",
+    "ocorrencia": "Sem Registro"
+  },
+  {
+    "documento": null,
+    "frete": 8,
+    "cte": "Sem informação",
+    "destinatario": "Teste",
+    "cidade": "DIADEMA",
+    "uf": "SP",
+    "status": "EM ABERTO",
+    "ocorrencia": "Sem Registro"
+  },
+  {
+    "documento": null,
+    "frete": 9,
+    "cte": "Sem informação",
+    "destinatario": "Teste",
+    "cidade": "DIADEMA",
+    "uf": "SP",
+    "status": "EM ABERTO",
+    "ocorrencia": "Sem Registro"
+  },
+  {
+    "documento": null,
+    "frete": 10,
+    "cte": "Sem informação",
+    "destinatario": "Teste",
+    "cidade": "DIADEMA",
+    "uf": "SP",
+    "status": "EM ABERTO",
+    "ocorrencia": "Sem Registro"
+  },
+  {
+    "documento": null,
+    "frete": 11,
+    "cte": "Sem informação",
+    "destinatario": "Teste",
+    "cidade": "DIADEMA",
+    "uf": "SP",
+    "status": "OUTRO",
+    "ocorrencia": "Sem Registro"
+  }
+]

@@ -24,6 +24,7 @@
         --border: 240 5.9% 90%;
         --input: 240 5.9% 90%;
         --ring: 240 5.9% 10%;
+        --blue-system: #27408B;
     }
 
     .dark:root {

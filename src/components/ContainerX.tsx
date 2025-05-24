@@ -1,14 +1,14 @@
-import { View } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type Props = {
-  children: React.ReactNode
-}
+  children: React.ReactNode;
+};
 export function ContainerX({ children }: Props) {
-  const insets = useSafeAreaInsets()
+  const insets = useSafeAreaInsets();
   return (
     <View
-      className="bg-grayscale-1 flex-1"
+      className="flex-1 bg-grayscale-1"
       style={{
         paddingTop: insets.top,
         paddingBottom: insets.bottom,
@@ -18,5 +18,5 @@ export function ContainerX({ children }: Props) {
     >
       {children}
     </View>
-  )
+  );
 }
