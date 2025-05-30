@@ -16,7 +16,9 @@ const ROUTE_PATH_COLETA = "/info-coleta";
 const ROUTE_PATH_DESPACHO = "/info-despacho";
 const ROUTE_PATH_RETIRADA = "/info-retirada";
 const ROUTE_PATH_TRANSFERENCIA = "/info-transferencia";
-const ROUTE_PATH_MANIFEST = "/manifesto";
+const ROUTE_PATH_MANIFEST = "/manifestos";
+const ROUTE_PATH_OCORRENCIA_ENTREGA = "/ocorrencia/entrega";
+const ROUTE_PATH_OCORRENCIA_COLETA = "/ocorrencia/coleta";
 
 const auth_login = async (unidade: string, login: string, senha: string) => {
   if (DEV) {
@@ -141,6 +143,61 @@ const getInfoManifest = async (): Promise<AxiosResponse<manifestDTO[]>> => {
   return await api.get<manifestDTO[]>(ROUTE_PATH_MANIFEST);
 };
 
+const updateOcorrenciaEntrega = async (
+  documentoId: number,
+  data: {
+    data_ocorrencia: string;
+    hora_ocorrencia: string;
+    observacao: string;
+    ocorrencia: string;
+  }
+): Promise<AxiosResponse> => {
+  if (DEV) {
+    console.log("Mocking API response");
+    const response = {
+      data: { message: "Ocorrência atualizada com sucesso" },
+      status: 200,
+      statusText: "OK",
+    };
+    await new Promise((resolve) => setTimeout(resolve, timeout));
+    return response as AxiosResponse;
+  }
+
+  return await api.put(`${ROUTE_PATH_OCORRENCIA_ENTREGA}/${documentoId}`, data);
+};
+
+const updateOcorrenciaColeta = async (
+  coletaNumero: number,
+  data: {
+    data_ocorrencia: string;
+    hora_ocorrencia: string;
+    observacao: string;
+    ocorrencia: string;
+  }
+): Promise<AxiosResponse> => {
+  if (DEV) {
+    console.log("Mocking API response");
+    const response = {
+      data: { message: "Ocorrência atualizada com sucesso" },
+      status: 200,
+      statusText: "OK",
+    };
+    await new Promise((resolve) => setTimeout(resolve, timeout));
+    return response as AxiosResponse;
+  }
+
+  return await api.put(`${ROUTE_PATH_OCORRENCIA_COLETA}/${coletaNumero}`, data);
+};
+
+export async function updateOcorrenciaDespacho(minutaId: number, payload: any) {
+  try {
+    const response = await api.put(`/ocorrencia/despacho/${minutaId}`, payload);
+    return response;
+  } catch (error) {
+    throw error;
+  }
+}
+
 export {
   auth_login,
   getInfoEntrega,
@@ -149,4 +206,6 @@ export {
   getInfoRetirada,
   getInfoTransferencia,
   getInfoManifest,
+  updateOcorrenciaEntrega,
+  updateOcorrenciaColeta,
 };

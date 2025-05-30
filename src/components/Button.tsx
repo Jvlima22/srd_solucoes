@@ -1,6 +1,6 @@
 import { ComponentPropsWithoutRef, ElementRef, forwardRef } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { Pressable } from "react-native";
+import { TouchableOpacity } from "react-native";
 import { TextClassContext } from "./Text";
 import { cn } from "@/lib/utils";
 
@@ -59,10 +59,10 @@ const buttonTextVariants = cva(
   },
 );
 
-type ButtonProps = ComponentPropsWithoutRef<typeof Pressable> &
+type ButtonProps = ComponentPropsWithoutRef<typeof TouchableOpacity> &
   VariantProps<typeof buttonVariants>;
 
-const Button = forwardRef<ElementRef<typeof Pressable>, ButtonProps>(
+const Button = forwardRef<ElementRef<typeof TouchableOpacity>, ButtonProps>(
   ({ className, variant, size, ...props }, ref) => {
     return (
       <TextClassContext.Provider
@@ -72,7 +72,7 @@ const Button = forwardRef<ElementRef<typeof Pressable>, ButtonProps>(
           className: "web:pointer-events-none",
         })}
       >
-        <Pressable
+        <TouchableOpacity
           className={cn(
             props.disabled && "opacity-50 web:pointer-events-none",
             buttonVariants({ variant, size, className }),

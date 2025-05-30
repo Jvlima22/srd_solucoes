@@ -77,7 +77,7 @@ export function ManifestScreen() {
   const handleBaixarOcorrencias = async (idManifesto: number) => {
     try {
       const response = await axios.get(
-        `http://localhost:3000/ocorrencias/${idManifesto}`,
+        `http://localhost:3000/manifestos/ocorrencias/${idManifesto}`,
       );
       setOcorrencias(response.data);
       setModalVisible(true);

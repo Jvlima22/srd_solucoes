@@ -9,11 +9,13 @@ import {
   Pressable,
   TouchableOpacity,
   View,
+  TextInput,
 } from "react-native";
 import axios from "axios";
-
-import { useEffect, useState } from "react";
-import { getInfoEntrega } from "@/service/services";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { getInfoEntrega, updateOcorrenciaEntrega } from "@/service/services";
+import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
+import MaskInput from "react-native-mask-input";
 
 export function DeliveryScreen() {
   const [entregas, setEntregas] = useState<deliveryDTO[]>([]);
@@ -28,6 +30,24 @@ export function DeliveryScreen() {
     hora_ocorrencia: string;
     observacao: string;
   } | null>(null);
+
+  // Bottom Sheet
+  const bottomSheetRef = useRef<BottomSheet>(null);
+  const snapPoints = useMemo(() => ["25%", "50%", "90%"], []);
+  const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
+  const [documento, setDocumento] = useState("");
+  const [frete, setFrete] = useState("");
+  const [data, setData] = useState("");
+  const [hora, setHora] = useState("");
+  const [observacao, setObservacao] = useState("");
+  const [selectedOcorrencia, setSelectedOcorrencia] = useState("");
+  const [isOcorrenciaSheetOpen, setIsOcorrenciaSheetOpen] = useState(false);
+
+  const ocorrencias = [
+    "Aguardado no local",
+    "Cliente recusou a entrega",
+    "Entrega cancelada pelo cliente"
+  ];
 
   const fetchData = async () => {
     setLoading(true);
@@ -53,14 +73,45 @@ export function DeliveryScreen() {
     }
   };
 
-  const handleLancarOcorrencia = async (documentoId: number) => {
+  const handleLancarOcorrencia = async (documentoId: number, freteId: number) => {
+    setDocumento(documentoId.toString());
+    setFrete(freteId.toString());
+    setIsBottomSheetOpen(true);
+    bottomSheetRef.current?.expand();
+  };
+
+  const handleSalvarOcorrencia = async () => {
     try {
-      const response = await axios.get(
-        `http://localhost:3000/ocorrencia/entrega/${documentoId}`,
-      );
-      setOcorrenciaData(response.data[0]);
+      if (!selectedOcorrencia || !data || !hora) {
+        alert("Por favor, preencha todos os campos obrigatórios");
+        return;
+      }
+
+      await updateOcorrenciaEntrega(Number(documento), {
+        data_ocorrencia: data,
+        hora_ocorrencia: hora,
+        observacao: observacao,
+        ocorrencia: selectedOcorrencia,
+      });
+
+      // Atualiza a lista de entregas
+      await fetchData();
+
+      // Fecha o bottom sheet e limpa o formulário
+      bottomSheetRef.current?.close();
+      setIsBottomSheetOpen(false);
+      // Reset form
+      setDocumento("");
+      setFrete("");
+      setData("");
+      setHora("");
+      setObservacao("");
+      setSelectedOcorrencia("");
+
+      alert("Ocorrência salva com sucesso!");
     } catch (error) {
-      console.error("Error fetching ocorrencia data:", error);
+      console.error("Error saving ocorrencia:", error);
+      alert("Erro ao salvar ocorrência. Por favor, tente novamente.");
     }
   };
 
@@ -154,7 +205,7 @@ export function DeliveryScreen() {
                   <Button
                     size="icon"
                     className="w-1/3 min-w-[200px]"
-                    onPress={() => handleLancarOcorrencia(item.documento)}
+                    onPress={() => handleLancarOcorrencia(item.documento, item.frete)}
                   >
                     <P className="text-xl text-white">Lançar ocorrência</P>
                   </Button>
@@ -237,6 +288,131 @@ export function DeliveryScreen() {
             </View>
           </View>
         </Modal>
+
+        {isBottomSheetOpen && (
+          <BottomSheet
+            ref={bottomSheetRef}
+            snapPoints={snapPoints}
+            enablePanDownToClose={true}
+            onClose={() => setIsBottomSheetOpen(false)}
+          >
+            <BottomSheetView className="flex-1 p-4">
+              <H4 className="mb-4">Lançar Ocorrência</H4>
+              
+              <View className="mb-4">
+                <P className="mb-2">Documento / NF:</P>
+                <TextInput
+                  className="h-12 rounded-lg border border-gray-300 px-4"
+                  value={documento}
+                  editable={false}
+                  onChangeText={setDocumento}
+                  keyboardType="numeric"
+                />
+              </View>
+
+              <View className="mb-4">
+                <P className="mb-2">Frete:</P>
+                <TextInput
+                  className="h-12 rounded-lg border border-gray-300 px-4"
+                  value={frete}
+                  onChangeText={setFrete}
+                  editable={false}
+                  keyboardType="numeric"
+                />
+              </View>
+
+              <View className="mb-4">
+                <P className="mb-2">Ocorrência:</P>
+                <Pressable
+                  className="h-12 rounded-lg border border-gray-300 px-4 justify-center"
+                  onPress={() => setIsOcorrenciaSheetOpen(true)}
+                >
+                  <P>{selectedOcorrencia || "Selecione uma ocorrência"}</P>
+                </Pressable>
+              </View>
+
+              <View className="mb-4">
+                <P className="mb-2">Data Ocorrência:</P>
+                <MaskInput
+                  className="h-12 rounded-lg border border-gray-300 px-4"
+                  value={data}
+                  onChangeText={setData}
+                  mask={[/\d/, /\d/, '/', /\d/, /\d/, '/', /\d/, /\d/, /\d/, /\d/]}
+                  placeholder="DD/MM/AAAA"
+                />
+              </View>
+
+              <View className="mb-4">
+                <P className="mb-2">Hora Ocorrência:</P>
+                <MaskInput
+                  className="h-12 rounded-lg border border-gray-300 px-4"
+                  value={hora}
+                  onChangeText={setHora}
+                  mask={[/[0-2]/, /[0-9]/, ':', /[0-5]/, /[0-9]/]}
+                  placeholder="HH:MM"
+                />
+              </View>
+
+              <View className="mb-4">
+                <P className="mb-2">Observação:</P>
+                <TextInput
+                  className="h-24 rounded-lg border border-gray-300 px-4 py-2"
+                  value={observacao}
+                  onChangeText={setObservacao}
+                  multiline
+                  numberOfLines={4}
+                  textAlignVertical="top"
+                />
+              </View>
+
+              <View className="flex-row justify-between gap-4">
+                <Button
+                  className="flex-1"
+                  variant="secondary"
+                  onPress={() => {
+                    bottomSheetRef.current?.close();
+                    setIsBottomSheetOpen(false);
+                  }}
+                >
+                  <P className="text-white">Voltar</P>
+                </Button>
+                <Button
+                  className="flex-1"
+                  onPress={handleSalvarOcorrencia}
+                >
+                  <P className="text-white">Salvar</P>
+                </Button>
+              </View>
+            </BottomSheetView>
+          </BottomSheet>
+        )}
+
+        {isOcorrenciaSheetOpen && (
+          <BottomSheet
+            snapPoints={["50%"]}
+            enablePanDownToClose={true}
+            onClose={() => setIsOcorrenciaSheetOpen(false)}
+          >
+            <BottomSheetView className="flex-1 p-4">
+              <H4 className="mb-4">Selecione a Ocorrência</H4>
+              
+              <View className="flex-1">
+                {ocorrencias.map((ocorrencia, index) => (
+                  <Pressable
+                    key={index}
+                    className="py-4 border-b border-gray-200"
+                    onPress={() => {
+                      setSelectedOcorrencia(ocorrencia);
+                      setIsOcorrenciaSheetOpen(false);
+                    }}
+                  >
+                    <P>{ocorrencia}</P>
+                  </Pressable>
+                ))}
+              </View>
+            </BottomSheetView>
+          </BottomSheet>
+        )}
       </View>
     </ContainerAppCpX>
   );
