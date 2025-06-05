@@ -2,20 +2,21 @@
 import { createRef, useEffect, useState } from "react";
 import {
   Image,
-  Modal,
-  Pressable,
   ScrollView,
   FlatList,
   ActivityIndicator,
   TextInput,
   TouchableOpacity,
   View,
+  Pressable,
 } from "react-native";
 import { Button } from "@components/Button";
 import { ContainerAppCpX } from "@components/ContainerAppCpX";
 import { H3, H4, P } from "@components/Typography";
 import { ChevronDown as IconDown } from "lucide-react-native";
 import axios from "axios";
+import { useNavigation } from "@react-navigation/native";
+import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 
 import ArrowRight from "@assets/Arrow-right.png";
 import ArrowLeft from "@assets/Arrow-left.png";
@@ -27,20 +28,41 @@ import {
   BottomSheetPicker,
 } from "@components/BottomSheetPicker";
 import { getInfoManifest } from "@/service/services";
+import { api } from "@/service/api";
+
+interface RootObject {
+  tipo: string;
+  documento?: number;
+  frete?: number;
+  cte?: string;
+  destinatario?: string;
+  cidade: string;
+  uf: string;
+  status: string;
+  ocorrencia?: string;
+  coleta_numero?: number;
+  total_documento?: number;
+  local?: string;
+  minuta_numero?: number;
+  total_frete?: number;
+  total_volume?: number;
+}
 
 export function ManifestScreen() {
+  const navigation = useNavigation();
   const [selectStatus, setSelectStatus] = useState<{
     name: string;
     value: string;
   } | null>(null);
   const bottomSheetPicker = createRef<BottomSheetPickerChoiceRef>();
+  const bottomSheetRef = createRef<BottomSheet>();
 
   const [manifests, setManifests] = useState<manifestDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
-  const [ocorrencias, setOcorrencias] = useState<any[]>([]);
+  const [ocorrencias, setOcorrencias] = useState<RootObject[]>([]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -76,13 +98,38 @@ export function ManifestScreen() {
 
   const handleBaixarOcorrencias = async (idManifesto: number) => {
     try {
-      const response = await axios.get(
-        `http://localhost:3000/manifestos/ocorrencias/${idManifesto}`,
-      );
+      const response = await api.get(`/manifestos/ocorrencias/${idManifesto}`);
       setOcorrencias(response.data);
       setModalVisible(true);
+      bottomSheetRef.current?.expand();
     } catch (error) {
       console.error("Error fetching ocorrencias:", error);
+    }
+  };
+
+  const handleNavigateToScreen = (tipo: string) => {
+    setModalVisible(false);
+    bottomSheetRef.current?.close();
+    
+    switch (tipo.toLowerCase()) {
+      case 'entrega':
+        navigation.navigate('DeliveryScreen' as never);
+        break;
+      case 'coleta':
+        navigation.navigate('CollectionScreen' as never);
+        break;
+      case 'despacho':
+        navigation.navigate('DispatchScreen' as never);
+        break;
+      case 'retirada':
+        navigation.navigate('WithDrawalScreen' as never);
+        break;
+      case 'transferência':
+      case 'transferencia':
+        navigation.navigate('TransferScreen' as never);
+        break;
+      default:
+        break;
     }
   };
 
@@ -277,33 +324,60 @@ export function ManifestScreen() {
         }}
       />
 
-      <Modal
-        animationType="slide"
-        transparent={false}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View className="flex-1 bg-white p-5 pt-28">
-          <TouchableOpacity
-            className="absolute right-5 top-20 h-10 w-10 items-center justify-center rounded-full bg-gray-300"
-            onPress={() => setModalVisible(false)}
-          >
-            <H3 className="text-black">X</H3>
-          </TouchableOpacity>
-
-          <ScrollView>
-            {ocorrencias.map((ocorrencia, index) => (
-              <View key={index} className="mb-5 border-b border-gray-300 pb-5">
-                {Object.entries(ocorrencia).map(([key, value]) => (
-                  <P key={key} className="text-black">
-                    {key}: {String(value)}
-                  </P>
-                ))}
+      {modalVisible && (
+        <BottomSheet
+          ref={bottomSheetRef}
+          snapPoints={["25%", "50%", "90%"]}
+          enablePanDownToClose={true}
+          onClose={() => setModalVisible(false)}
+        >
+          <BottomSheetView className="flex-1 p-4">
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <View className="flex-row items-center justify-between mb-4">
+                <H4>Detalhes das Ocorrências</H4>
+                <TouchableOpacity
+                  className="h-8 w-8 items-center justify-center rounded-full bg-gray-200"
+                  onPress={() => {
+                    setModalVisible(false);
+                    bottomSheetRef.current?.close();
+                  }}
+                >
+                  <P>X</P>
+                </TouchableOpacity>
               </View>
-            ))}
-          </ScrollView>
-        </View>
-      </Modal>
+
+              {ocorrencias.map((ocorrencia, index) => (
+                <View key={index} className="mb-5 bg-white rounded-lg p-4 shadow">
+                  <View className="border-b border-gray-200 pb-2 mb-2">
+                    <H4 className="text-blue-900">Ocorrência #{index + 1}</H4>
+                  </View>
+                  
+                  {Object.entries(ocorrencia).map(([key, value]) => {
+                    if (key === 'tipo' && value) {
+                      return (
+                        <View key={key} className="mt-4">
+                          <Button
+                            onPress={() => handleNavigateToScreen(value as string)}
+                            className="bg-blue-900"
+                          >
+                            <P className="text-white">Ir para {value}</P>
+                          </Button>
+                        </View>
+                      );
+                    }
+                    return (
+                      <View key={key} className="flex-row py-1">
+                        <P className="font-bold capitalize">{key.replace('_', ' ')}: </P>
+                        <P>{String(value)}</P>
+                      </View>
+                    );
+                  })}
+                </View>
+              ))}
+            </ScrollView>
+          </BottomSheetView>
+        </BottomSheet>
+      )}
     </>
   );
 }
