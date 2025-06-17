@@ -19,7 +19,7 @@ export function ContainerAppCpX({ children }: Props) {
     >
       {children}
 
-      <P className="ml-10">© SRP Sistema - 2025</P>
+      <P className="ml-10">© SRD Sistema - 2025</P>
     </View>
   );
 }

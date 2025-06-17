@@ -1,5 +1,4 @@
-/* eslint-disable jsx-a11y/alt-text */
-import { createRef, useEffect, useState } from "react";
+import { createRef, useEffect, useState, useCallback } from "react";
 import {
   Image,
   ScrollView,
@@ -29,6 +28,7 @@ import {
 } from "@components/BottomSheetPicker";
 import { getInfoManifest } from "@/service/services";
 import { api } from "@/service/api";
+import React from "react";
 
 interface RootObject {
   tipo: string;
@@ -48,6 +48,8 @@ interface RootObject {
   total_volume?: number;
 }
 
+type TransportStatus = "..." | "EM ABERTO" | "EM TRANSITO" | "FINALIZADO";
+
 export function ManifestScreen() {
   const navigation = useNavigation();
   const [selectStatus, setSelectStatus] = useState<{
@@ -63,6 +65,9 @@ export function ManifestScreen() {
   const [searchTerm, setSearchTerm] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
   const [ocorrencias, setOcorrencias] = useState<RootObject[]>([]);
+  const [transportStatus, setTransportStatus] =
+    useState<TransportStatus>("...");
+  const [activeManifestId, setActiveManifestId] = useState<number | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -96,37 +101,80 @@ export function ManifestScreen() {
     manifest.id_manifesto.toString().includes(searchTerm),
   );
 
-  const handleBaixarOcorrencias = async (idManifesto: number) => {
+  const handleIniciarTransporte = useCallback(async (idManifesto: number) => {
     try {
-      const response = await api.get(`/manifestos/ocorrencias/${idManifesto}`);
-      setOcorrencias(response.data);
-      setModalVisible(true);
-      bottomSheetRef.current?.expand();
+      // Busca o manifesto específico
+      const manifestoResponse = await api.get(`/manifestos/${idManifesto}`);
+      const manifestoData = manifestoResponse.data;
+
+      // Busca os status disponíveis
+      const statusResponse = await api.get("/status");
+      const statusData = statusResponse.data;
+
+      // Encontra o status correspondente ao status do manifesto
+      const currentStatus = statusData.find(
+        (status: any) => status.id === manifestoData.status,
+      );
+
+      if (currentStatus) {
+        setActiveManifestId(idManifesto);
+        setTransportStatus(currentStatus.nome);
+        console.log("Status atual:", currentStatus.nome); // Debug log
+      } else {
+        console.log(
+          "Status não encontrado para o manifesto:",
+          manifestoData.status,
+        ); // Debug log
+      }
     } catch (error) {
-      console.error("Error fetching ocorrencias:", error);
+      console.error("Erro ao buscar status do manifesto:", error);
     }
+  }, []);
+
+  const checkTransportStatus = () => {
+    if (!activeManifestId) return "...";
+
+    const allCompleted = ocorrencias.every(
+      (ocorrencia) => ocorrencia.status === "FINALIZADO",
+    );
+
+    if (allCompleted) {
+      setTransportStatus("FINALIZADO");
+      return "FINALIZADO";
+    }
+
+    const hasInProgress = ocorrencias.some(
+      (ocorrencia) => ocorrencia.status === "EM TRANSITO",
+    );
+
+    if (hasInProgress) {
+      setTransportStatus("EM TRANSITO");
+      return "EM TRANSITO";
+    }
+
+    return transportStatus;
   };
 
   const handleNavigateToScreen = (tipo: string) => {
     setModalVisible(false);
     bottomSheetRef.current?.close();
-    
+
     switch (tipo.toLowerCase()) {
-      case 'entrega':
-        navigation.navigate('DeliveryScreen' as never);
+      case "entrega":
+        navigation.navigate("DeliveryScreen" as never);
         break;
-      case 'coleta':
-        navigation.navigate('CollectionScreen' as never);
+      case "coleta":
+        navigation.navigate("CollectionScreen" as never);
         break;
-      case 'despacho':
-        navigation.navigate('DispatchScreen' as never);
+      case "despacho":
+        navigation.navigate("DispatchScreen" as never);
         break;
-      case 'retirada':
-        navigation.navigate('WithDrawalScreen' as never);
+      case "retirada":
+        navigation.navigate("WithDrawalScreen" as never);
         break;
-      case 'transferência':
-      case 'transferencia':
-        navigation.navigate('TransferScreen' as never);
+      case "transferência":
+      case "transferencia":
+        navigation.navigate("TransferScreen" as never);
         break;
       default:
         break;
@@ -256,7 +304,7 @@ export function ManifestScreen() {
             renderItem={({ item }) => (
               <View className="mt-8">
                 <View className="border border-zinc-600 p-5">
-                  <View className="mb-5 w-1/2 flex-row items-center justify-center gap-3 self-center rounded-xl bg-blue-900 p-3">
+                  <View className="mb-5 w-1/2 flex-row items-center justify-center gap-3 self-center rounded-lg bg-blue-900 p-3">
                     <P className="text-white">MANIFESTO</P>
 
                     <View className="h-6 w-6 items-center justify-center rounded-full bg-white">
@@ -266,30 +314,65 @@ export function ManifestScreen() {
 
                   <View className="flex-col gap-3">
                     <View className="flex-row items-center gap-3">
+                      <Button
+                        className="h-[30px] w-[80px] items-center justify-center rounded-lg"
+                        onPress={() => handleNavigateToScreen("entrega")}
+                        style={{ backgroundColor: "#439943" }}
+                      >
+                        <P className="text-xs text-white">Baixar</P>
+                      </Button>
                       <Image source={ArrowRight} className="h-7 w-7" />
 
                       <P>Entrega - {item.entrega}</P>
                     </View>
 
                     <View className="flex-row items-center gap-3">
+                      <Button
+                        className="h-[30px] w-[80px] items-center justify-center rounded-lg"
+                        onPress={() => handleNavigateToScreen("coleta")}
+                        style={{ backgroundColor: "#ED9C2A" }}
+                      >
+                        <P className="text-xs text-white">Baixar</P>
+                      </Button>
                       <Image source={ArrowLeft} className="h-7 w-7" />
 
                       <P>Coleta - {item.coleta}</P>
                     </View>
 
                     <View className="flex-row items-center gap-3">
+                      <Button
+                        className="h-[30px] w-[80px] items-center justify-center rounded-lg"
+                        onPress={() => handleNavigateToScreen("despacho")}
+                        style={{ backgroundColor: "#2E6EA5" }}
+                      >
+                        <P className="text-xs text-white">Baixar</P>
+                      </Button>
                       <Image source={ArrowUp} className="h-7 w-7" />
 
                       <P>Despacho - {item.despacho}</P>
                     </View>
 
                     <View className="flex-row items-center gap-3">
+                      <Button
+                        className="h-[30px] w-[80px] items-center justify-center rounded-lg"
+                        onPress={() => handleNavigateToScreen("retirada")}
+                        style={{ backgroundColor: "#28A4C9" }}
+                      >
+                        <P className="text-xs text-white">Baixar</P>
+                      </Button>
                       <Image source={ArrowDown} className="h-7 w-7" />
 
                       <P>Retirada - {item.retirada}</P>
                     </View>
 
                     <View className="flex-row items-center gap-3">
+                      <Button
+                        className="h-[30px] w-[80px] items-center justify-center rounded-lg"
+                        onPress={() => handleNavigateToScreen("transferencia")}
+                        style={{ backgroundColor: "#EEEEEE" }}
+                      >
+                        <P className="text-xs text-black">Baixar</P>
+                      </Button>
                       <Image source={CurvedArrow} className="h-7 w-7" />
 
                       <P>Transferência - {item.transferencia}</P>
@@ -298,10 +381,20 @@ export function ManifestScreen() {
 
                   <View className="mt-8 items-center justify-center">
                     <Button
-                      className="w-1/3"
-                      onPress={() => handleBaixarOcorrencias(item.id_manifesto)}
+                      className="w-1/2"
+                      style={{
+                        backgroundColor:
+                          activeManifestId === item.id_manifesto
+                            ? "#1e40af"
+                            : "#dc2626",
+                      }}
+                      onPress={() => handleIniciarTransporte(item.id_manifesto)}
                     >
-                      <H3 className="text-white">Baixar</H3>
+                      <H3 className="text-base font-bold text-white">
+                        {activeManifestId === item.id_manifesto
+                          ? checkTransportStatus()
+                          : "Iniciar transporte"}
+                      </H3>
                     </Button>
                   </View>
                 </View>
@@ -333,7 +426,7 @@ export function ManifestScreen() {
         >
           <BottomSheetView className="flex-1 p-4">
             <ScrollView showsVerticalScrollIndicator={false}>
-              <View className="flex-row items-center justify-between mb-4">
+              <View className="mb-4 flex-row items-center justify-between">
                 <H4>Detalhes das Ocorrências</H4>
                 <TouchableOpacity
                   className="h-8 w-8 items-center justify-center rounded-full bg-gray-200"
@@ -347,17 +440,22 @@ export function ManifestScreen() {
               </View>
 
               {ocorrencias.map((ocorrencia, index) => (
-                <View key={index} className="mb-5 bg-white rounded-lg p-4 shadow">
-                  <View className="border-b border-gray-200 pb-2 mb-2">
+                <View
+                  key={index}
+                  className="mb-5 rounded-lg bg-white p-4 shadow"
+                >
+                  <View className="mb-2 border-b border-gray-200 pb-2">
                     <H4 className="text-blue-900">Ocorrência #{index + 1}</H4>
                   </View>
-                  
+
                   {Object.entries(ocorrencia).map(([key, value]) => {
-                    if (key === 'tipo' && value) {
+                    if (key === "tipo" && value) {
                       return (
                         <View key={key} className="mt-4">
                           <Button
-                            onPress={() => handleNavigateToScreen(value as string)}
+                            onPress={() =>
+                              handleNavigateToScreen(value as string)
+                            }
                             className="bg-blue-900"
                           >
                             <P className="text-white">Ir para {value}</P>
@@ -367,7 +465,9 @@ export function ManifestScreen() {
                     }
                     return (
                       <View key={key} className="flex-row py-1">
-                        <P className="font-bold capitalize">{key.replace('_', ' ')}: </P>
+                        <P className="font-bold capitalize">
+                          {key.replace("_", " ")}:{" "}
+                        </P>
                         <P>{String(value)}</P>
                       </View>
                     );

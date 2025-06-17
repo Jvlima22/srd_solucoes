@@ -5,4 +5,5 @@ interface manifestDTO {
   retirada: string;
   transferencia: string;
   despacho: string;
+  status: string;
 }

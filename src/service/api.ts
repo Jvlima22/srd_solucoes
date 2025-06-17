@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://srd-solucoes.vercel.app",
+  baseURL: "http://192.168.15.25:3000",
   headers: {
     "Content-Type": "application/json",
   },
