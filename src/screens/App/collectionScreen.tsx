@@ -1,35 +1,39 @@
-/* eslint-disable jsx-a11y/alt-text */
 import { Button } from "@components/Button";
 import { ContainerAppCpX } from "@components/ContainerAppCpX";
 import { H1, H4, P } from "@components/Typography";
 import {
   ActivityIndicator,
   FlatList,
-  Image,
   Pressable,
   ScrollView,
   TextInput,
   View,
 } from "react-native";
-
-import ArrowRight from "@assets/Arrow-right.png";
-import ArrowLeft from "@assets/Arrow-left.png";
-import ArrowUp from "@assets/Arrow-up.png";
-import ArrowDown from "@assets/Arrow-down.png";
-import CurvedArrow from "@assets/Curved-Arrow.png";
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { getInfoColeta, updateOcorrenciaColeta } from "@/service/services";
 import { CustomModal } from "@/components/CustomModal";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import MaskInput from "react-native-mask-input";
+import { useRoute, RouteProp } from "@react-navigation/native";
+
+type CollectionScreenParams = {
+  manifestoId: string;
+};
+
+type CollectionScreenRouteProp = RouteProp<
+  { params: CollectionScreenParams },
+  "params"
+>;
 
 export function CollectionScreen() {
+  const route = useRoute<CollectionScreenRouteProp>();
+  const manifestoId = route.params?.manifestoId || "1"; // Default to "1" if not provided
   const [entregas, setEntregas] = useState<coletaDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState<coletaDTO | null>(null);
-  
+
   // Estados para o lançamento de ocorrência
   const bottomSheetRef = useRef<BottomSheet>(null);
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
@@ -43,12 +47,16 @@ export function CollectionScreen() {
   const [documento, setDocumento] = useState("");
   const [arquivo, setArquivo] = useState<string | null>(null);
 
-  const ocorrencias = ["coleta cancelada", "Filial", "Coleta realizado normalmente"];
+  const ocorrencias = [
+    "coleta cancelada",
+    "Filial",
+    "Coleta realizado normalmente",
+  ];
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const response = await getInfoColeta();
+      const response = await getInfoColeta(manifestoId);
       setEntregas(response.data);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -60,7 +68,7 @@ export function CollectionScreen() {
   const onRefresh = async () => {
     setRefreshing(true);
     try {
-      const response = await getInfoColeta();
+      const response = await getInfoColeta(manifestoId);
       setEntregas(response.data);
     } catch (error) {
       console.error("Error refreshing data:", error);
@@ -70,7 +78,7 @@ export function CollectionScreen() {
   };
 
   const handleLancarOcorrencia = (item: coletaDTO) => {
-    setColetaNumero(item.coleta_numero.toString());
+    setColetaNumero(item.coleta.toString());
     setIsBottomSheetOpen(true);
     bottomSheetRef.current?.expand();
   };
@@ -101,12 +109,11 @@ export function CollectionScreen() {
       if (selectedOcorrencia === "Coleta realizado normalmente") {
         payload.recebedor = expedidor;
         payload.documento_recebedor = documento;
-        payload.id_tipo_recebedor = "teste1"
+        payload.id_tipo_recebedor = "teste1";
         payload.arquivo = "MOCK_ARQUIVO";
       }
 
       console.log(payload);
-
 
       await updateOcorrenciaColeta(Number(coletaNumero), payload);
 
@@ -154,9 +161,7 @@ export function CollectionScreen() {
 
         <FlatList
           data={entregas}
-          keyExtractor={(item, index) =>
-            String(item.coleta_numero + "srp" + index)
-          }
+          keyExtractor={(item, index) => String(item.coleta + "srp" + index)}
           showsVerticalScrollIndicator={false}
           refreshing={refreshing}
           onRefresh={onRefresh}
@@ -168,35 +173,47 @@ export function CollectionScreen() {
           renderItem={({ item }) => (
             <View className="mt-5">
               <View className="rounded-lg border border-zinc-600 p-5">
-                <View className="mb-5 w-1/2 flex-row items-center justify-center gap-3 self-center rounded-xl bg-blue-900 p-3">
-                  <P className="text-white">Coleta N°</P>
+                <View className="mb-5 w-1/2 flex-row items-center justify-center gap-3 self-center rounded-lg bg-blue-900 p-3">
+                  <P className="text-white">COLETA</P>
 
-                  <View className="h-8 min-w-8 items-center justify-center rounded-full bg-white p-1">
-                    <P>{item.coleta_numero}</P>
+                  <View className="h-8 w-8 items-center justify-center rounded-full bg-white">
+                    <P>{item.coleta}</P>
                   </View>
                 </View>
 
                 <View className="flex-col">
                   <View className="flex-row items-center gap-3">
                     <P className="text-sm font-bold">
-                      Total Documento - {item.total_documento}
+                      Total Documento - {item.totalDocumento}
                     </P>
                   </View>
 
                   <View className="flex-row items-center gap-3">
-                    <P className="text-sm">Local - {item.local}</P>
+                    <P className="text-sm">Volume - {item.volume || "N/A"}</P>
                   </View>
 
                   <View className="flex-row items-center gap-3">
-                    <P className="text-sm">Cidade - {item.cidade}</P>
+                    <P className="text-sm">Peso - {item.peso} kg</P>
                   </View>
 
                   <View className="flex-row items-center gap-3">
-                    <P className="text-sm">UF - {item.uf}</P>
+                    <P className="text-sm">
+                      Local - {item.destinatario || "N/A"}
+                    </P>
                   </View>
 
                   <View className="flex-row items-center gap-3">
-                    <P className="text-sm font-bold">Status - {item.status}</P>
+                    <P className="text-sm">Cidade - {item.cidade || "N/A"}</P>
+                  </View>
+
+                  <View className="flex-row items-center gap-3">
+                    <P className="text-sm">UF - {item.uf || "N/A"}</P>
+                  </View>
+
+                  <View className="flex-row items-center gap-3">
+                    <P className="text-sm font-bold">
+                      Status - {item.status || "N/A"}
+                    </P>
                   </View>
                 </View>
 
@@ -209,17 +226,20 @@ export function CollectionScreen() {
                       setModalVisible(true);
                     }}
                   >
-                    <P className="text-xl text-white">Detalhe</P>
+                    <P className="text-base font-bold text-white">Detalhes</P>
                   </Button>
                 </View>
 
                 <View className="mt-3 items-center justify-center">
-                  <Button 
-                    size="icon" 
+                  <Button
+                    size="icon"
                     className="w-1/3 min-w-[200px]"
+                    style={{ backgroundColor: "#dc2626" }}
                     onPress={() => handleLancarOcorrencia(item)}
                   >
-                    <P className="text-xl text-white">Lançar ocorrência</P>
+                    <P className="text-base font-bold text-white">
+                      Lançar ocorrência
+                    </P>
                   </Button>
                 </View>
               </View>
@@ -234,10 +254,25 @@ export function CollectionScreen() {
           {selectedItem && (
             <View>
               <H1 className="text-white">
-                Coleta Número: {selectedItem.coleta_numero}
+                Coleta Número: {selectedItem.coleta}
               </H1>
-              <P className="text-white">Local: {selectedItem.local}</P>
-              <P className="text-white">Status: {selectedItem.status}</P>
+              <P className="text-white">
+                Total Documentos: {selectedItem.totalDocumento}
+              </P>
+              <P className="text-white">
+                Volume: {selectedItem.volume || "N/A"}
+              </P>
+              <P className="text-white">Peso: {selectedItem.peso} kg</P>
+              <P className="text-white">
+                Local: {selectedItem.destinatario || "N/A"}
+              </P>
+              <P className="text-white">
+                Cidade: {selectedItem.cidade || "N/A"}
+              </P>
+              <P className="text-white">UF: {selectedItem.uf || "N/A"}</P>
+              <P className="text-white">
+                Status: {selectedItem.status || "N/A"}
+              </P>
             </View>
           )}
         </CustomModal>
@@ -252,7 +287,7 @@ export function CollectionScreen() {
             <BottomSheetView className="flex-1 p-4">
               <ScrollView showsVerticalScrollIndicator={false}>
                 <H4 className="mb-4">Lançar Ocorrência</H4>
-                
+
                 <View className="mb-4">
                   <P className="mb-2">Coleta Número:</P>
                   <TextInput
@@ -265,7 +300,7 @@ export function CollectionScreen() {
                 <View className="mb-4">
                   <P className="mb-2">Ocorrência:</P>
                   <Pressable
-                    className="h-12 rounded-lg border border-gray-300 px-4 justify-center"
+                    className="h-12 justify-center rounded-lg border border-gray-300 px-4"
                     onPress={() => setIsOcorrenciaSheetOpen(true)}
                   >
                     <P>{selectedOcorrencia || "Selecione uma ocorrência"}</P>
@@ -278,7 +313,18 @@ export function CollectionScreen() {
                     className="h-12 rounded-lg border border-gray-300 px-4"
                     value={data}
                     onChangeText={setData}
-                    mask={[/\d/, /\d/, '/', /\d/, /\d/, '/', /\d/, /\d/, /\d/, /\d/]}
+                    mask={[
+                      /\d/,
+                      /\d/,
+                      "/",
+                      /\d/,
+                      /\d/,
+                      "/",
+                      /\d/,
+                      /\d/,
+                      /\d/,
+                      /\d/,
+                    ]}
                     placeholder="DD/MM/AAAA"
                   />
                 </View>
@@ -289,7 +335,7 @@ export function CollectionScreen() {
                     className="h-12 rounded-lg border border-gray-300 px-4"
                     value={hora}
                     onChangeText={setHora}
-                    mask={[/[0-2]/, /[0-9]/, ':', /[0-5]/, /[0-9]/]}
+                    mask={[/[0-2]/, /[0-9]/, ":", /[0-5]/, /[0-9]/]}
                     placeholder="HH:MM"
                   />
                 </View>
@@ -335,7 +381,9 @@ export function CollectionScreen() {
                         onPress={() => setArquivo("MOCK_ARQUIVO")}
                       >
                         <P className="text-white">
-                          {arquivo ? "Arquivo selecionado" : "Selecionar arquivo"}
+                          {arquivo
+                            ? "Arquivo selecionado"
+                            : "Selecionar arquivo"}
                         </P>
                       </Button>
                     </View>
@@ -353,10 +401,7 @@ export function CollectionScreen() {
                   >
                     <P className="text-white">Voltar</P>
                   </Button>
-                  <Button
-                    className="flex-1"
-                    onPress={handleSalvarOcorrencia}
-                  >
+                  <Button className="flex-1" onPress={handleSalvarOcorrencia}>
                     <P className="text-white">Salvar</P>
                   </Button>
                 </View>
@@ -373,12 +418,12 @@ export function CollectionScreen() {
           >
             <BottomSheetView className="flex-1 p-4">
               <H4 className="mb-4">Selecione a Ocorrência</H4>
-              
+
               <View className="flex-1">
                 {ocorrencias.map((ocorrencia, index) => (
                   <Pressable
                     key={index}
-                    className="py-4 border-b border-gray-200"
+                    className="border-b border-gray-200 py-4"
                     onPress={() => {
                       setSelectedOcorrencia(ocorrencia);
                       setIsOcorrenciaSheetOpen(false);

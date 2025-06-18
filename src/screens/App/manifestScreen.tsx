@@ -1,4 +1,4 @@
-import { createRef, useEffect, useState, useCallback } from "react";
+import React, { createRef, useEffect, useState, useCallback } from "react";
 import {
   Image,
   ScrollView,
@@ -28,7 +28,6 @@ import {
 } from "@components/BottomSheetPicker";
 import { getInfoManifest } from "@/service/services";
 import { api } from "@/service/api";
-import React from "react";
 
 interface RootObject {
   tipo: string;
@@ -307,7 +306,7 @@ export function ManifestScreen() {
                   <View className="mb-5 w-1/2 flex-row items-center justify-center gap-3 self-center rounded-lg bg-blue-900 p-3">
                     <P className="text-white">MANIFESTO</P>
 
-                    <View className="h-6 w-6 items-center justify-center rounded-full bg-white">
+                    <View className="h-8 w-8 items-center justify-center rounded-full bg-white">
                       <P>{item.id_manifesto}</P>
                     </View>
                   </View>

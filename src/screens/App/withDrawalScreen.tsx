@@ -1,30 +1,35 @@
-/* eslint-disable jsx-a11y/alt-text */
 import { Button } from "@components/Button";
 import { ContainerAppCpX } from "@components/ContainerAppCpX";
 import { H1, H4, P } from "@components/Typography";
 import {
   ActivityIndicator,
   FlatList,
-  Image,
   Pressable,
   ScrollView,
   TextInput,
   View,
 } from "react-native";
 
-import ArrowRight from "@assets/Arrow-right.png";
-import ArrowLeft from "@assets/Arrow-left.png";
-import ArrowUp from "@assets/Arrow-up.png";
-import ArrowDown from "@assets/Arrow-down.png";
-import CurvedArrow from "@assets/Curved-Arrow.png";
 import { useEffect, useRef, useState } from "react";
 import { getInfoRetirada, updateOcorrenciaRetirada } from "@/service/services";
 import { CustomModal } from "@/components/CustomModal";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import MaskInput from "react-native-mask-input";
+import { useRoute, RouteProp } from "@react-navigation/native";
+
+type WithdrawalScreenParams = {
+  manifestoId: string;
+};
+
+type WithdrawalScreenRouteProp = RouteProp<
+  { params: WithdrawalScreenParams },
+  "params"
+>;
 
 export function WithDrawalScreen() {
-  const [entregas, setEntregas] = useState<retiradaDTO[]>([]);
+  const route = useRoute<WithdrawalScreenRouteProp>();
+  const manifestoId = route.params?.manifestoId || "1"; // Default to "1" if not provided
+  const [retiradas, setRetiradas] = useState<retiradaDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -38,15 +43,21 @@ export function WithDrawalScreen() {
   const [data, setData] = useState("");
   const [hora, setHora] = useState("");
   const [observacao, setObservacao] = useState("");
-  const [minutaNumero, setMinutaNumero] = useState("");
+  const [retiradaId, setRetiradaId] = useState("");
 
-  const ocorrencias = ["Retirada cancelada", "Filial", "Retirada realizada normalmente"];
+  const ocorrencias = [
+    "Retirada cancelada",
+    "Filial",
+    "Retirada realizada normalmente",
+  ];
 
   const fetchData = async () => {
+    if (!manifestoId) return;
+
     setLoading(true);
     try {
-      const response = await getInfoRetirada();
-      setEntregas(response.data);
+      const response = await getInfoRetirada(manifestoId);
+      setRetiradas(response.data);
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -57,8 +68,8 @@ export function WithDrawalScreen() {
   const onRefresh = async () => {
     setRefreshing(true);
     try {
-      const response = await getInfoRetirada();
-      setEntregas(response.data);
+      const response = await getInfoRetirada(manifestoId);
+      setRetiradas(response.data);
     } catch (error) {
       console.error("Error refreshing data:", error);
     } finally {
@@ -67,7 +78,7 @@ export function WithDrawalScreen() {
   };
 
   const handleLancarOcorrencia = (item: retiradaDTO) => {
-    setMinutaNumero(item.minuta_numero.toString());
+    setRetiradaId(item.retirada.toString());
     setIsBottomSheetOpen(true);
     bottomSheetRef.current?.expand();
   };
@@ -79,7 +90,7 @@ export function WithDrawalScreen() {
         return;
       }
 
-      await updateOcorrenciaRetirada(Number(minutaNumero), {
+      await updateOcorrenciaRetirada(Number(retiradaId), {
         data_ocorrencia: data,
         hora_ocorrencia: hora,
         observacao: observacao,
@@ -93,7 +104,7 @@ export function WithDrawalScreen() {
       bottomSheetRef.current?.close();
       setIsBottomSheetOpen(false);
       // Reset form
-      setMinutaNumero("");
+      setRetiradaId("");
       setData("");
       setHora("");
       setObservacao("");
@@ -108,7 +119,7 @@ export function WithDrawalScreen() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [manifestoId]);
 
   if (loading) {
     return (
@@ -126,10 +137,8 @@ export function WithDrawalScreen() {
         <H4>Relação de Retirada</H4>
 
         <FlatList
-          data={entregas}
-          keyExtractor={(item, index) =>
-            String(item.minuta_numero + "srp" + index)
-          }
+          data={retiradas}
+          keyExtractor={(item, index) => String(item.retirada + "srp" + index)}
           showsVerticalScrollIndicator={false}
           refreshing={refreshing}
           onRefresh={onRefresh}
@@ -142,34 +151,26 @@ export function WithDrawalScreen() {
             <View className="mt-5">
               <View className="rounded-lg border border-zinc-600 p-5">
                 <View className="mb-5 w-1/2 flex-row items-center justify-center gap-3 self-center rounded-xl bg-blue-900 p-3">
-                  <P className="text-white">Minuta N°</P>
+                  <P className="text-white">Frete N°</P>
 
                   <View className="h-8 min-w-8 items-center justify-center rounded-full bg-white p-1">
-                    <P>{item.minuta_numero}</P>
+                    <P>{item.frete}</P>
                   </View>
                 </View>
 
                 <View className="flex-col">
                   <View className="flex-row items-center gap-3">
                     <P className="text-sm font-bold">
-                      Total Frete - {item.total_frete}
+                      Retirada - {item.retirada}
                     </P>
                   </View>
 
                   <View className="flex-row items-center gap-3">
-                    <P className="text-sm">
-                      Total Documento - {item.total_documento}
-                    </P>
+                    <P className="text-sm">CTE - {item.cte}</P>
                   </View>
 
                   <View className="flex-row items-center gap-3">
-                    <P className="text-sm">
-                      Total Volume - {item.total_volume}
-                    </P>
-                  </View>
-
-                  <View className="flex-row items-center gap-3">
-                    <P className="text-sm">Local - {item.local}</P>
+                    <P className="text-sm">Destino - {item.destino}</P>
                   </View>
 
                   <View className="flex-row items-center gap-3">
@@ -194,14 +195,15 @@ export function WithDrawalScreen() {
                     className="w-1/3"
                     size="icon"
                   >
-                    <P className="text-xl text-white">Detalhe</P>
+                    <P className="text-xl text-white">Detalhes</P>
                   </Button>
                 </View>
 
                 <View className="mt-3 items-center justify-center">
-                  <Button 
-                    size="icon" 
+                  <Button
+                    size="icon"
                     className="w-1/3 min-w-[200px]"
+                    style={{ backgroundColor: "#dc2626" }}
                     onPress={() => handleLancarOcorrencia(item)}
                   >
                     <P className="text-xl text-white">Lançar ocorrência</P>
@@ -218,10 +220,12 @@ export function WithDrawalScreen() {
         >
           {selectedItem && (
             <View>
-              <H1 className="text-white">
-                Minuta Número: {selectedItem.minuta_numero}
-              </H1>
-              <P className="text-white">Local: {selectedItem.local}</P>
+              <H1 className="text-white">Frete Número: {selectedItem.frete}</H1>
+              <P className="text-white">Retirada: {selectedItem.retirada}</P>
+              <P className="text-white">CTE: {selectedItem.cte}</P>
+              <P className="text-white">Destino: {selectedItem.destino}</P>
+              <P className="text-white">Cidade: {selectedItem.cidade}</P>
+              <P className="text-white">UF: {selectedItem.uf}</P>
               <P className="text-white">Status: {selectedItem.status}</P>
             </View>
           )}
@@ -237,12 +241,12 @@ export function WithDrawalScreen() {
             <BottomSheetView className="flex-1 p-4">
               <ScrollView showsVerticalScrollIndicator={false}>
                 <H4 className="mb-4">Lançar Ocorrência</H4>
-                
+
                 <View className="mb-4">
-                  <P className="mb-2">Minuta Número:</P>
+                  <P className="mb-2">Retirada ID:</P>
                   <TextInput
                     className="h-12 rounded-lg border border-gray-300 px-4"
-                    value={minutaNumero}
+                    value={retiradaId}
                     editable={false}
                   />
                 </View>
@@ -250,7 +254,7 @@ export function WithDrawalScreen() {
                 <View className="mb-4">
                   <P className="mb-2">Ocorrência:</P>
                   <Pressable
-                    className="h-12 rounded-lg border border-gray-300 px-4 justify-center"
+                    className="h-12 justify-center rounded-lg border border-gray-300 px-4"
                     onPress={() => setIsOcorrenciaSheetOpen(true)}
                   >
                     <P>{selectedOcorrencia || "Selecione uma ocorrência"}</P>
@@ -258,23 +262,34 @@ export function WithDrawalScreen() {
                 </View>
 
                 <View className="mb-4">
-                  <P className="mb-2">Data Ocorrência:</P>
+                  <P className="mb-2">Data:</P>
                   <MaskInput
                     className="h-12 rounded-lg border border-gray-300 px-4"
                     value={data}
                     onChangeText={setData}
-                    mask={[/\d/, /\d/, '/', /\d/, /\d/, '/', /\d/, /\d/, /\d/, /\d/]}
+                    mask={[
+                      /\d/,
+                      /\d/,
+                      "/",
+                      /\d/,
+                      /\d/,
+                      "/",
+                      /\d/,
+                      /\d/,
+                      /\d/,
+                      /\d/,
+                    ]}
                     placeholder="DD/MM/AAAA"
                   />
                 </View>
 
                 <View className="mb-4">
-                  <P className="mb-2">Hora Ocorrência:</P>
+                  <P className="mb-2">Hora:</P>
                   <MaskInput
                     className="h-12 rounded-lg border border-gray-300 px-4"
                     value={hora}
                     onChangeText={setHora}
-                    mask={[/[0-2]/, /[0-9]/, ':', /[0-5]/, /[0-9]/]}
+                    mask={[/[0-2]/, /[0-9]/, ":", /[0-5]/, /[0-9]/]}
                     placeholder="HH:MM"
                   />
                 </View>
@@ -302,10 +317,7 @@ export function WithDrawalScreen() {
                   >
                     <P className="text-white">Voltar</P>
                   </Button>
-                  <Button
-                    className="flex-1"
-                    onPress={handleSalvarOcorrencia}
-                  >
+                  <Button className="flex-1" onPress={handleSalvarOcorrencia}>
                     <P className="text-white">Salvar</P>
                   </Button>
                 </View>
@@ -322,12 +334,12 @@ export function WithDrawalScreen() {
           >
             <BottomSheetView className="flex-1 p-4">
               <H4 className="mb-4">Selecione a Ocorrência</H4>
-              
+
               <View className="flex-1">
                 {ocorrencias.map((ocorrencia, index) => (
                   <Pressable
                     key={index}
-                    className="py-4 border-b border-gray-200"
+                    className="border-b border-gray-200 py-4"
                     onPress={() => {
                       setSelectedOcorrencia(ocorrencia);
                       setIsOcorrenciaSheetOpen(false);

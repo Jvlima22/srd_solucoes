@@ -1,7 +1,6 @@
-/* eslint-disable jsx-a11y/alt-text */
 import { Button } from "@components/Button";
 import { ContainerAppCpX } from "@components/ContainerAppCpX";
-import { H1, H3, H4, P } from "@components/Typography";
+import { H4, P } from "@components/Typography";
 import {
   ActivityIndicator,
   FlatList,
@@ -11,13 +10,24 @@ import {
   View,
   TextInput,
 } from "react-native";
-import axios from "axios";
-import { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { getInfoEntrega, updateOcorrenciaEntrega } from "@/service/services";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import MaskInput from "react-native-mask-input";
+import { useRoute, RouteProp } from "@react-navigation/native";
+
+type DeliveryScreenParams = {
+  manifestoId: string;
+};
+
+type DeliveryScreenRouteProp = RouteProp<
+  { params: DeliveryScreenParams },
+  "params"
+>;
 
 export function DeliveryScreen() {
+  const route = useRoute<DeliveryScreenRouteProp>();
+  const manifestoId = route.params?.manifestoId || "1"; // Default to "1" if not provided
   const [entregas, setEntregas] = useState<deliveryDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -46,13 +56,13 @@ export function DeliveryScreen() {
   const ocorrencias = [
     "Aguardado no local",
     "Cliente recusou a entrega",
-    "Entrega cancelada pelo cliente"
+    "Entrega cancelada pelo cliente",
   ];
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const response = await getInfoEntrega();
+      const response = await getInfoEntrega(manifestoId);
       setEntregas(response.data);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -64,7 +74,7 @@ export function DeliveryScreen() {
   const onRefresh = async () => {
     setRefreshing(true);
     try {
-      const response = await getInfoEntrega();
+      const response = await getInfoEntrega(manifestoId);
       setEntregas(response.data);
     } catch (error) {
       console.error("Error refreshing data:", error);
@@ -73,7 +83,10 @@ export function DeliveryScreen() {
     }
   };
 
-  const handleLancarOcorrencia = async (documentoId: number, freteId: number) => {
+  const handleLancarOcorrencia = async (
+    documentoId: number,
+    freteId: number,
+  ) => {
     setDocumento(documentoId.toString());
     setFrete(freteId.toString());
     setIsBottomSheetOpen(true);
@@ -148,10 +161,10 @@ export function DeliveryScreen() {
           renderItem={({ item }) => (
             <View className="mt-5">
               <View className="rounded-lg border border-zinc-600 p-5">
-                <View className="mb-3 w-1/2 flex-row items-center justify-center gap-3 self-center rounded-xl bg-system p-3">
-                  <P className="text-white">Documento</P>
+                <View className="mb-3 w-1/2 flex-row items-center justify-center gap-3 self-center rounded-lg bg-system p-3">
+                  <P className="text-white">DOCUMENTO</P>
 
-                  <View className="h-8 min-w-8 items-center justify-center rounded-full bg-white p-1">
+                  <View className="h-8 w-8 items-center justify-center rounded-full bg-white">
                     <P>{item.documento}</P>
                   </View>
                 </View>
@@ -197,7 +210,7 @@ export function DeliveryScreen() {
                       setModalVisible(true);
                     }}
                   >
-                    <P className="text-xl text-white">Detalhe</P>
+                    <P className="text-base font-bold text-white">Detalhes</P>
                   </Button>
                 </View>
 
@@ -205,9 +218,14 @@ export function DeliveryScreen() {
                   <Button
                     size="icon"
                     className="w-1/3 min-w-[200px]"
-                    onPress={() => handleLancarOcorrencia(item.documento, item.frete)}
+                    style={{ backgroundColor: "#dc2626" }}
+                    onPress={() =>
+                      handleLancarOcorrencia(item.documento, item.frete)
+                    }
                   >
-                    <P className="text-xl text-white">Lançar ocorrência</P>
+                    <P className="text-base font-bold text-white">
+                      Lançar ocorrência
+                    </P>
                   </Button>
                 </View>
               </View>
@@ -298,7 +316,7 @@ export function DeliveryScreen() {
           >
             <BottomSheetView className="flex-1 p-4">
               <H4 className="mb-4">Lançar Ocorrência</H4>
-              
+
               <View className="mb-4">
                 <P className="mb-2">Documento / NF:</P>
                 <TextInput
@@ -324,7 +342,7 @@ export function DeliveryScreen() {
               <View className="mb-4">
                 <P className="mb-2">Ocorrência:</P>
                 <Pressable
-                  className="h-12 rounded-lg border border-gray-300 px-4 justify-center"
+                  className="h-12 justify-center rounded-lg border border-gray-300 px-4"
                   onPress={() => setIsOcorrenciaSheetOpen(true)}
                 >
                   <P>{selectedOcorrencia || "Selecione uma ocorrência"}</P>
@@ -337,7 +355,18 @@ export function DeliveryScreen() {
                   className="h-12 rounded-lg border border-gray-300 px-4"
                   value={data}
                   onChangeText={setData}
-                  mask={[/\d/, /\d/, '/', /\d/, /\d/, '/', /\d/, /\d/, /\d/, /\d/]}
+                  mask={[
+                    /\d/,
+                    /\d/,
+                    "/",
+                    /\d/,
+                    /\d/,
+                    "/",
+                    /\d/,
+                    /\d/,
+                    /\d/,
+                    /\d/,
+                  ]}
                   placeholder="DD/MM/AAAA"
                 />
               </View>
@@ -348,7 +377,7 @@ export function DeliveryScreen() {
                   className="h-12 rounded-lg border border-gray-300 px-4"
                   value={hora}
                   onChangeText={setHora}
-                  mask={[/[0-2]/, /[0-9]/, ':', /[0-5]/, /[0-9]/]}
+                  mask={[/[0-2]/, /[0-9]/, ":", /[0-5]/, /[0-9]/]}
                   placeholder="HH:MM"
                 />
               </View>
@@ -376,10 +405,7 @@ export function DeliveryScreen() {
                 >
                   <P className="text-white">Voltar</P>
                 </Button>
-                <Button
-                  className="flex-1"
-                  onPress={handleSalvarOcorrencia}
-                >
+                <Button className="flex-1" onPress={handleSalvarOcorrencia}>
                   <P className="text-white">Salvar</P>
                 </Button>
               </View>
@@ -395,12 +421,12 @@ export function DeliveryScreen() {
           >
             <BottomSheetView className="flex-1 p-4">
               <H4 className="mb-4">Selecione a Ocorrência</H4>
-              
+
               <View className="flex-1">
                 {ocorrencias.map((ocorrencia, index) => (
                   <Pressable
                     key={index}
-                    className="py-4 border-b border-gray-200"
+                    className="border-b border-gray-200 py-4"
                     onPress={() => {
                       setSelectedOcorrencia(ocorrencia);
                       setIsOcorrenciaSheetOpen(false);

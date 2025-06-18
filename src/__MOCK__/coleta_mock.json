@@ -1,16 +1,20 @@
 [
   {
-    "coleta_numero": 12,
-    "total_documento": 0,
-    "local": "Cliente ID 3",
+    "coleta": 12,
+    "totalDocumento": 0,
+    "volume": null,
+    "peso": "0",
+    "destinatario": "Cliente ID 3",
     "cidade": "São Paulo",
     "uf": "SP",
     "status": "OUTRO"
   },
   {
-    "coleta_numero": 13,
-    "total_documento": 0,
-    "local": "Cliente ID 3",
+    "coleta": 13,
+    "totalDocumento": 0,
+    "volume": null,
+    "peso": "0",
+    "destinatario": "Cliente ID 3",
     "cidade": "São Paulo",
     "uf": "SP",
     "status": "OUTRO"

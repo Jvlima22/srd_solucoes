@@ -49,7 +49,9 @@ const auth_login = async (unidade: string, login: string, senha: string) => {
   });
 };
 
-const getInfoEntrega = async (): Promise<AxiosResponse<deliveryDTO[]>> => {
+const getInfoEntrega = async (
+  manifestoId: string,
+): Promise<AxiosResponse<deliveryDTO[]>> => {
   if (DEV) {
     console.log("Mocking API response");
     const response = {
@@ -63,69 +65,101 @@ const getInfoEntrega = async (): Promise<AxiosResponse<deliveryDTO[]>> => {
 
   console.log("Fetching API response PRODUCTION");
 
-  return await api.get<deliveryDTO[]>(ROUTE_PATH_ENTREGA);
+  return await api.get<deliveryDTO[]>(`${ROUTE_PATH_ENTREGA}/${manifestoId}`);
 };
 
-const getInfoColeta = async (): Promise<AxiosResponse<coletaDTO[]>> => {
+const getInfoColeta = async (
+  manifestoId: string,
+): Promise<AxiosResponse<coletaDTO[]>> => {
   if (DEV) {
     console.log("Mocking API response");
     const response = {
       data: coletaJSON,
       status: 200,
       statusText: "OK",
+      headers: {},
+      config: {} as any,
     };
     await new Promise((resolve) => setTimeout(resolve, timeout));
     return response as AxiosResponse<coletaDTO[]>;
   }
 
-  return await api.get<coletaDTO[]>(ROUTE_PATH_COLETA);
+  return await api.get<coletaDTO[]>(`${ROUTE_PATH_COLETA}/${manifestoId}`);
 };
 
-const getInfoDespacho = async (): Promise<AxiosResponse<despachoDTO[]>> => {
+const getInfoDespacho = async (
+  manifestoId: string,
+): Promise<AxiosResponse<despachoDTO[]>> => {
   if (DEV) {
     console.log("Mocking API response");
     const response = {
-      data: despachoJSON,
+      data: despachoJSON.map((item) => ({
+        ...item,
+        frete: item.total_frete,
+        minutaDespacho: item.minuta_numero,
+        CTE: item.minuta_numero.toString(),
+        destino: `${item.local}, ${item.cidade} - ${item.uf}`,
+      })),
       status: 200,
       statusText: "OK",
+      headers: {},
+      config: {} as any,
     };
     await new Promise((resolve) => setTimeout(resolve, timeout));
     return response as AxiosResponse<despachoDTO[]>;
   }
 
-  return await api.get<despachoDTO[]>(ROUTE_PATH_DESPACHO);
+  return await api.get<despachoDTO[]>(`${ROUTE_PATH_DESPACHO}/${manifestoId}`);
 };
 
-const getInfoRetirada = async (): Promise<AxiosResponse<retiradaDTO[]>> => {
+const getInfoRetirada = async (
+  manifestoId: string,
+): Promise<AxiosResponse<retiradaDTO[]>> => {
   if (DEV) {
     console.log("Mocking API response");
     const response = {
-      data: retiradaJSON,
+      data: [
+        {
+          frete: 20,
+          retirada: 2,
+          cte: "Sem Informação",
+          destino: "Agente de entrega teste",
+          cidade: "SAO PAULO",
+          uf: "SP",
+          status: "EM ABERTO",
+        },
+      ],
       status: 200,
       statusText: "OK",
+      headers: {},
+      config: {} as any,
     };
     await new Promise((resolve) => setTimeout(resolve, timeout));
     return response as AxiosResponse<retiradaDTO[]>;
   }
 
-  return await api.get<retiradaDTO[]>(ROUTE_PATH_RETIRADA);
+  return await api.get<retiradaDTO[]>(`${ROUTE_PATH_RETIRADA}/${manifestoId}`);
 };
 
-const getInfoTransferencia = async (): Promise<
-  AxiosResponse<transferenciaDTO[]>
-> => {
+const getInfoTransferencia = async (
+  manifestoId: string,
+): Promise<AxiosResponse<transferenciaDTO[]>> => {
   if (DEV) {
     console.log("Mocking API response");
     const response = {
       data: transferenciaJSON,
       status: 200,
       statusText: "OK",
+      headers: {},
+      config: {} as any,
     };
     await new Promise((resolve) => setTimeout(resolve, timeout));
     return response as AxiosResponse<transferenciaDTO[]>;
   }
 
-  return await api.get<transferenciaDTO[]>(ROUTE_PATH_TRANSFERENCIA);
+  return await api.get<transferenciaDTO[]>(
+    `${ROUTE_PATH_TRANSFERENCIA}/${manifestoId}`,
+  );
 };
 
 const getInfoManifest = async (): Promise<AxiosResponse<manifestDTO[]>> => {
@@ -150,7 +184,7 @@ const updateOcorrenciaEntrega = async (
     hora_ocorrencia: string;
     observacao: string;
     ocorrencia: string;
-  }
+  },
 ): Promise<AxiosResponse> => {
   if (DEV) {
     console.log("Mocking API response");
@@ -173,7 +207,7 @@ const updateOcorrenciaColeta = async (
     hora_ocorrencia: string;
     observacao: string;
     ocorrencia: string;
-  }
+  },
 ): Promise<AxiosResponse> => {
   if (DEV) {
     console.log("Mocking API response");
@@ -187,6 +221,29 @@ const updateOcorrenciaColeta = async (
   }
 
   return await api.put(`${ROUTE_PATH_OCORRENCIA_COLETA}/${coletaNumero}`, data);
+};
+
+const updateOcorrenciaRetirada = async (
+  retiradaId: number,
+  data: {
+    data_ocorrencia: string;
+    hora_ocorrencia: string;
+    observacao: string;
+    ocorrencia: string;
+  },
+): Promise<AxiosResponse> => {
+  if (DEV) {
+    console.log("Mocking API response");
+    const response = {
+      data: { message: "Ocorrência atualizada com sucesso" },
+      status: 200,
+      statusText: "OK",
+    };
+    await new Promise((resolve) => setTimeout(resolve, timeout));
+    return response as AxiosResponse;
+  }
+
+  return await api.put(`/ocorrencia/retirada/${retiradaId}`, data);
 };
 
 export async function updateOcorrenciaDespacho(minutaId: number, payload: any) {
@@ -208,4 +265,5 @@ export {
   getInfoManifest,
   updateOcorrenciaEntrega,
   updateOcorrenciaColeta,
+  updateOcorrenciaRetirada,
 };

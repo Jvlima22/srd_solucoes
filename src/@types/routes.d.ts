@@ -1,11 +1,11 @@
-declare type RootStackParamList = {
-  SplashScreen: undefined
-  StartupScreen: undefined
-  SignInScreen: undefined
-  AppScreen: undefined
-  DeliveryScreen: undefined
-  CollectionScreen: undefined
-  DispatchScreen: undefined
-  WithDrawalScreen: undefined
-  TransferScreen: undefined
-}
+export type RootStackParamList = {
+  SplashScreen: undefined;
+  StartupScreen: undefined;
+  SignInScreen: undefined;
+  AppScreen: undefined;
+  DeliveryScreen: { manifestoId: string };
+  CollectionScreen: { manifestoId: string };
+  DispatchScreen: { manifestoId: string };
+  WithDrawalScreen: { manifestoId: string };
+  TransferScreen: { manifestoId: string };
+};

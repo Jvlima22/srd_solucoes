@@ -1,4 +1,3 @@
-/* eslint-disable jsx-a11y/alt-text */
 import { Button } from "@components/Button";
 import { ContainerAppCpX } from "@components/ContainerAppCpX";
 import { H1, H4, P } from "@components/Typography";
@@ -18,17 +17,31 @@ import ArrowUp from "@assets/Arrow-up.png";
 import ArrowDown from "@assets/Arrow-down.png";
 import CurvedArrow from "@assets/Curved-Arrow.png";
 import { useEffect, useRef, useState } from "react";
-import { getInfoTransferencia, updateOcorrenciaTransferencia } from "@/service/services";
+import { getInfoTransferencia } from "@/service/services";
 import { CustomModal } from "@/components/CustomModal";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import MaskInput from "react-native-mask-input";
+import { useRoute, RouteProp } from "@react-navigation/native";
+
+type TransferScreenParams = {
+  manifestoId: string;
+};
+
+type TransferScreenRouteProp = RouteProp<
+  { params: TransferScreenParams },
+  "params"
+>;
 
 export function TransferScreen() {
+  const route = useRoute<TransferScreenRouteProp>();
+  const manifestoId = route.params?.manifestoId || "1"; // Default to "1" if not provided
   const [entregas, setEntregas] = useState<transferenciaDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<transferenciaDTO | null>(null);
+  const [selectedItem, setSelectedItem] = useState<transferenciaDTO | null>(
+    null,
+  );
 
   // Estados para o lançamento de ocorrência
   const bottomSheetRef = useRef<BottomSheet>(null);
@@ -40,12 +53,21 @@ export function TransferScreen() {
   const [observacao, setObservacao] = useState("");
   const [minutaNumero, setMinutaNumero] = useState("");
 
-  const ocorrencias = ["Transferência cancelada", "Filial", "Transferência realizada normalmente"];
+  const ocorrencias = [
+    "Transferência cancelada",
+    "Filial",
+    "Transferência realizada normalmente",
+  ];
 
   const fetchData = async () => {
+    if (!manifestoId) {
+      console.error("ManifestoId is required");
+      return;
+    }
+
     setLoading(true);
     try {
-      const response = await getInfoTransferencia();
+      const response = await getInfoTransferencia(manifestoId);
       setEntregas(response.data);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -55,9 +77,14 @@ export function TransferScreen() {
   };
 
   const onRefresh = async () => {
+    if (!manifestoId) {
+      console.error("ManifestoId is required");
+      return;
+    }
+
     setRefreshing(true);
     try {
-      const response = await getInfoTransferencia();
+      const response = await getInfoTransferencia(manifestoId);
       setEntregas(response.data);
     } catch (error) {
       console.error("Error refreshing data:", error);
@@ -67,7 +94,7 @@ export function TransferScreen() {
   };
 
   const handleLancarOcorrencia = (item: transferenciaDTO) => {
-    setMinutaNumero(item.minuta_numero.toString());
+    setMinutaNumero(item.transferencia.toString());
     setIsBottomSheetOpen(true);
     bottomSheetRef.current?.expand();
   };
@@ -79,12 +106,13 @@ export function TransferScreen() {
         return;
       }
 
-      await updateOcorrenciaTransferencia(Number(minutaNumero), {
-        data_ocorrencia: data,
-        hora_ocorrencia: hora,
-        observacao: observacao,
-        ocorrencia: selectedOcorrencia,
-      });
+      // TODO: Implement updateOcorrenciaTransferencia service
+      // await updateOcorrenciaTransferencia(Number(minutaNumero), {
+      //   data_ocorrencia: data,
+      //   hora_ocorrencia: hora,
+      //   observacao: observacao,
+      //   ocorrencia: selectedOcorrencia,
+      // });
 
       // Atualiza a lista de transferências
       await fetchData();
@@ -108,7 +136,7 @@ export function TransferScreen() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [manifestoId]);
 
   if (loading) {
     return (
@@ -128,7 +156,7 @@ export function TransferScreen() {
         <FlatList
           data={entregas}
           keyExtractor={(item, index) =>
-            String(item.minuta_numero + "srp" + index)
+            String(item.transferencia + "srp" + index)
           }
           showsVerticalScrollIndicator={false}
           refreshing={refreshing}
@@ -142,34 +170,20 @@ export function TransferScreen() {
             <View className="mt-5">
               <View className="rounded-lg border border-zinc-600 p-5">
                 <View className="mb-5 w-1/2 flex-row items-center justify-center gap-3 self-center rounded-xl bg-blue-900 p-3">
-                  <P className="text-white">Minuta N°</P>
+                  <P className="text-white">Transferência N°</P>
 
                   <View className="h-8 min-w-8 items-center justify-center rounded-full bg-white p-1">
-                    <P>{item.minuta_numero}</P>
+                    <P>{item.transferencia}</P>
                   </View>
                 </View>
 
                 <View className="flex-col">
                   <View className="flex-row items-center gap-3">
-                    <P className="text-sm font-bold">
-                      Total Frete - {item.total_frete}
-                    </P>
+                    <P className="text-sm font-bold">CTE - {item.cte}</P>
                   </View>
 
                   <View className="flex-row items-center gap-3">
-                    <P className="text-sm">
-                      Total Documento - {item.total_documento}
-                    </P>
-                  </View>
-
-                  <View className="flex-row items-center gap-3">
-                    <P className="text-sm">
-                      Total Volume - {item.total_volume}
-                    </P>
-                  </View>
-
-                  <View className="flex-row items-center gap-3">
-                    <P className="text-sm">Local - {item.local}</P>
+                    <P className="text-sm">Destino - {item.destino}</P>
                   </View>
 
                   <View className="flex-row items-center gap-3">
@@ -194,14 +208,15 @@ export function TransferScreen() {
                     className="w-1/3"
                     size="icon"
                   >
-                    <P className="text-xl text-white">Detalhe</P>
+                    <P className="text-xl text-white">Detalhes</P>
                   </Button>
                 </View>
 
                 <View className="mt-3 items-center justify-center">
-                  <Button 
-                    size="icon" 
+                  <Button
+                    size="icon"
                     className="w-1/3 min-w-[200px]"
+                    style={{ backgroundColor: "#dc2626" }}
                     onPress={() => handleLancarOcorrencia(item)}
                   >
                     <P className="text-xl text-white">Lançar ocorrência</P>
@@ -219,9 +234,12 @@ export function TransferScreen() {
           {selectedItem && (
             <View>
               <H1 className="text-white">
-                Minuta Número: {selectedItem.minuta_numero}
+                Transferência Número: {selectedItem.transferencia}
               </H1>
-              <P className="text-white">Local: {selectedItem.local}</P>
+              <P className="text-white">CTE: {selectedItem.cte}</P>
+              <P className="text-white">Destino: {selectedItem.destino}</P>
+              <P className="text-white">Cidade: {selectedItem.cidade}</P>
+              <P className="text-white">UF: {selectedItem.uf}</P>
               <P className="text-white">Status: {selectedItem.status}</P>
             </View>
           )}
@@ -237,9 +255,9 @@ export function TransferScreen() {
             <BottomSheetView className="flex-1 p-4">
               <ScrollView showsVerticalScrollIndicator={false}>
                 <H4 className="mb-4">Lançar Ocorrência</H4>
-                
+
                 <View className="mb-4">
-                  <P className="mb-2">Minuta Número:</P>
+                  <P className="mb-2">Transferência Número:</P>
                   <TextInput
                     className="h-12 rounded-lg border border-gray-300 px-4"
                     value={minutaNumero}
@@ -250,7 +268,7 @@ export function TransferScreen() {
                 <View className="mb-4">
                   <P className="mb-2">Ocorrência:</P>
                   <Pressable
-                    className="h-12 rounded-lg border border-gray-300 px-4 justify-center"
+                    className="h-12 justify-center rounded-lg border border-gray-300 px-4"
                     onPress={() => setIsOcorrenciaSheetOpen(true)}
                   >
                     <P>{selectedOcorrencia || "Selecione uma ocorrência"}</P>
@@ -263,7 +281,18 @@ export function TransferScreen() {
                     className="h-12 rounded-lg border border-gray-300 px-4"
                     value={data}
                     onChangeText={setData}
-                    mask={[/\d/, /\d/, '/', /\d/, /\d/, '/', /\d/, /\d/, /\d/, /\d/]}
+                    mask={[
+                      /\d/,
+                      /\d/,
+                      "/",
+                      /\d/,
+                      /\d/,
+                      "/",
+                      /\d/,
+                      /\d/,
+                      /\d/,
+                      /\d/,
+                    ]}
                     placeholder="DD/MM/AAAA"
                   />
                 </View>
@@ -274,7 +303,7 @@ export function TransferScreen() {
                     className="h-12 rounded-lg border border-gray-300 px-4"
                     value={hora}
                     onChangeText={setHora}
-                    mask={[/[0-2]/, /[0-9]/, ':', /[0-5]/, /[0-9]/]}
+                    mask={[/[0-2]/, /[0-9]/, ":", /[0-5]/, /[0-9]/]}
                     placeholder="HH:MM"
                   />
                 </View>
@@ -302,10 +331,7 @@ export function TransferScreen() {
                   >
                     <P className="text-white">Voltar</P>
                   </Button>
-                  <Button
-                    className="flex-1"
-                    onPress={handleSalvarOcorrencia}
-                  >
+                  <Button className="flex-1" onPress={handleSalvarOcorrencia}>
                     <P className="text-white">Salvar</P>
                   </Button>
                 </View>
@@ -322,12 +348,12 @@ export function TransferScreen() {
           >
             <BottomSheetView className="flex-1 p-4">
               <H4 className="mb-4">Selecione a Ocorrência</H4>
-              
+
               <View className="flex-1">
                 {ocorrencias.map((ocorrencia, index) => (
                   <Pressable
                     key={index}
-                    className="py-4 border-b border-gray-200"
+                    className="border-b border-gray-200 py-4"
                     onPress={() => {
                       setSelectedOcorrencia(ocorrencia);
                       setIsOcorrenciaSheetOpen(false);

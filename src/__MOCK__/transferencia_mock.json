@@ -1,152 +1,29 @@
 [
   {
-    "minuta_numero": 73,
-    "total_frete": 2,
-    "total_documento": 0,
-    "total_volume": 6,
-    "local": "Unidade de teste sistema",
-    "cidade": "AMARANTE",
-    "uf": "PI",
+    "frete": 19,
+    "transferencia": 2,
+    "cte": "Sem Informação",
+    "destino": "Filial teste de sistema",
+    "cidade": "SAO PAULO",
+    "uf": "SP",
     "status": "EM ABERTO"
   },
   {
-    "minuta_numero": 72,
-    "total_frete": 2,
-    "total_documento": 0,
-    "total_volume": 6,
-    "local": "Unidade de teste sistema",
-    "cidade": "AMARANTE",
-    "uf": "PI",
+    "frete": 18,
+    "transferencia": 3,
+    "cte": "Sem Informação",
+    "destino": "Filial teste de sistema",
+    "cidade": "SAO PAULO",
+    "uf": "SP",
     "status": "EM ABERTO"
   },
   {
-    "minuta_numero": 71,
-    "total_frete": 2,
-    "total_documento": 0,
-    "total_volume": 6,
-    "local": "Unidade de teste sistema",
-    "cidade": "AMARANTE",
-    "uf": "PI",
-    "status": "EM ABERTO"
-  },
-  {
-    "minuta_numero": 70,
-    "total_frete": 2,
-    "total_documento": 0,
-    "total_volume": 6,
-    "local": "Unidade de teste sistema",
-    "cidade": "AMARANTE",
-    "uf": "PI",
-    "status": "EM ABERTO"
-  },
-  {
-    "minuta_numero": 69,
-    "total_frete": 2,
-    "total_documento": 0,
-    "total_volume": 6,
-    "local": "Unidade de teste sistema",
-    "cidade": "AMARANTE",
-    "uf": "PI",
-    "status": "EM ABERTO"
-  },
-  {
-    "minuta_numero": 68,
-    "total_frete": 2,
-    "total_documento": 0,
-    "total_volume": 6,
-    "local": "Unidade de teste sistema",
-    "cidade": "AMARANTE",
-    "uf": "PI",
-    "status": "EM ABERTO"
-  },
-  {
-    "minuta_numero": 67,
-    "total_frete": 2,
-    "total_documento": 0,
-    "total_volume": 6,
-    "local": "Unidade de teste sistema",
-    "cidade": "AMARANTE",
-    "uf": "PI",
-    "status": "EM ABERTO"
-  },
-  {
-    "minuta_numero": 66,
-    "total_frete": 2,
-    "total_documento": 0,
-    "total_volume": 6,
-    "local": "Unidade de teste sistema",
-    "cidade": "AMARANTE",
-    "uf": "PI",
-    "status": "EM ABERTO"
-  },
-  {
-    "minuta_numero": 65,
-    "total_frete": 2,
-    "total_documento": 0,
-    "total_volume": 6,
-    "local": "Unidade de teste sistema",
-    "cidade": "AMARANTE",
-    "uf": "PI",
-    "status": "EM ABERTO"
-  },
-  {
-    "minuta_numero": 64,
-    "total_frete": 2,
-    "total_documento": 0,
-    "total_volume": 6,
-    "local": "Unidade de teste sistema",
-    "cidade": "AMARANTE",
-    "uf": "PI",
-    "status": "EM ABERTO"
-  },
-  {
-    "minuta_numero": 63,
-    "total_frete": 2,
-    "total_documento": 0,
-    "total_volume": 6,
-    "local": "Unidade de teste sistema",
-    "cidade": "AMARANTE",
-    "uf": "PI",
-    "status": "EM ABERTO"
-  },
-  {
-    "minuta_numero": 62,
-    "total_frete": 2,
-    "total_documento": 0,
-    "total_volume": 6,
-    "local": "Unidade de teste sistema",
-    "cidade": "AMARANTE",
-    "uf": "PI",
-    "status": "EM ABERTO"
-  },
-  {
-    "minuta_numero": 61,
-    "total_frete": 2,
-    "total_documento": 0,
-    "total_volume": 6,
-    "local": "Unidade de teste sistema",
-    "cidade": "AMARANTE",
-    "uf": "PI",
-    "status": "EM ABERTO"
-  },
-  {
-    "minuta_numero": 60,
-    "total_frete": 2,
-    "total_documento": 0,
-    "total_volume": 6,
-    "local": "Unidade de teste sistema",
-    "cidade": "AMARANTE",
-    "uf": "PI",
-    "status": "EM ABERTO"
-  },
-  {
-    "minuta_numero": 59,
-    "total_frete": 2,
-    "total_documento": 0,
-    "total_volume": 6,
-    "local": "Unidade de teste sistema",
-    "cidade": "AMARANTE",
-    "uf": "PI",
+    "frete": 17,
+    "transferencia": 4,
+    "cte": "Sem Informação",
+    "destino": "Filial teste de sistema",
+    "cidade": "SAO PAULO",
+    "uf": "SP",
     "status": "EM ABERTO"
   }
 ]

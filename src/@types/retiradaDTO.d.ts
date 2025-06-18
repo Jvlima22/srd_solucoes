@@ -1,9 +1,8 @@
 interface retiradaDTO {
-  minuta_numero: number;
-  total_frete: number;
-  total_documento: number;
-  total_volume: number;
-  local: string;
+  frete: number;
+  retirada: number;
+  cte: string;
+  destino: string;
   cidade: string;
   uf: string;
   status: string;
