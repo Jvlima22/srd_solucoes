@@ -16,12 +16,13 @@ import ArrowLeft from "@assets/Arrow-left.png";
 import ArrowUp from "@assets/Arrow-up.png";
 import ArrowDown from "@assets/Arrow-down.png";
 import CurvedArrow from "@assets/Curved-Arrow.png";
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { getInfoTransferencia } from "@/service/services";
 import { CustomModal } from "@/components/CustomModal";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import MaskInput from "react-native-mask-input";
 import { useRoute, RouteProp } from "@react-navigation/native";
+import { Check } from "lucide-react-native";
 
 type TransferScreenParams = {
   manifestoId: string;
@@ -58,6 +59,13 @@ export function TransferScreen() {
     "Filial",
     "Transferência realizada normalmente",
   ];
+
+  const [selectedDocumentos, setSelectedDocumentos] = useState<string[]>([]);
+  const [selectAll, setSelectAll] = useState(false);
+  // Para ocorrência em lote
+  const [loteTransferencias, setLoteTransferencias] = useState<string[]>([]);
+  const [loteFretes, setLoteFretes] = useState<string[]>([]);
+  const [isLote, setIsLote] = useState(false);
 
   const fetchData = async () => {
     if (!manifestoId) {
@@ -99,34 +107,80 @@ export function TransferScreen() {
     bottomSheetRef.current?.expand();
   };
 
+  const handleSelectAll = () => {
+    if (selectAll) {
+      setSelectedDocumentos([]);
+      setSelectAll(false);
+    } else {
+      const allIds = entregas.map(
+        (item) => String(item.transferencia) + "-" + item.frete,
+      );
+      setSelectedDocumentos(allIds);
+      setSelectAll(true);
+    }
+  };
+
+  const handleLancarOcorrenciaLote = () => {
+    if (selectedDocumentos.length === 0) {
+      alert(
+        "Selecione pelo menos uma transferência para lançar ocorrência em lote.",
+      );
+      return;
+    }
+    // Coletar todas as transferências e fretes selecionados
+    const transferencias: string[] = [];
+    const fretes: string[] = [];
+    selectedDocumentos.forEach((id) => {
+      const item = entregas.find(
+        (item) => String(item.transferencia) + "-" + item.frete === id,
+      );
+      if (item) {
+        transferencias.push(String(item.transferencia));
+        fretes.push(String(item.frete));
+      }
+    });
+    setLoteTransferencias(transferencias);
+    setLoteFretes(fretes);
+    setIsLote(true);
+    setIsBottomSheetOpen(true);
+    bottomSheetRef.current?.expand();
+  };
+
   const handleSalvarOcorrencia = async () => {
     try {
       if (!selectedOcorrencia || !data || !hora) {
         alert("Por favor, preencha todos os campos obrigatórios");
         return;
       }
-
-      // TODO: Implement updateOcorrenciaTransferencia service
-      // await updateOcorrenciaTransferencia(Number(minutaNumero), {
-      //   data_ocorrencia: data,
-      //   hora_ocorrencia: hora,
-      //   observacao: observacao,
-      //   ocorrencia: selectedOcorrencia,
-      // });
-
-      // Atualiza a lista de transferências
+      if (isLote && loteTransferencias.length > 0) {
+        // TODO: Implementar updateOcorrenciaTransferencia para cada transferência
+        for (let i = 0; i < loteTransferencias.length; i++) {
+          // await updateOcorrenciaTransferencia(Number(loteTransferencias[i]), {
+          //   data_ocorrencia: data,
+          //   hora_ocorrencia: hora,
+          //   observacao: observacao,
+          //   ocorrencia: selectedOcorrencia,
+          // });
+        }
+      } else {
+        // await updateOcorrenciaTransferencia(Number(minutaNumero), {
+        //   data_ocorrencia: data,
+        //   hora_ocorrencia: hora,
+        //   observacao: observacao,
+        //   ocorrencia: selectedOcorrencia,
+        // });
+      }
       await fetchData();
-
-      // Fecha o bottom sheet e limpa o formulário
       bottomSheetRef.current?.close();
       setIsBottomSheetOpen(false);
-      // Reset form
       setMinutaNumero("");
       setData("");
       setHora("");
       setObservacao("");
       setSelectedOcorrencia("");
-
+      setIsLote(false);
+      setLoteTransferencias([]);
+      setLoteFretes([]);
       alert("Ocorrência salva com sucesso!");
     } catch (error) {
       console.error("Error saving ocorrencia:", error);
@@ -153,6 +207,44 @@ export function TransferScreen() {
       <View className="flex-1 p-7">
         <H4>Relação de Transferência</H4>
 
+        {/* Botão de ocorrência em lote */}
+        <Button
+          className={`mb-2 mt-6 w-full flex-row items-center ${selectedDocumentos.length > 0 ? "bg-blue-900" : ""}`}
+          style={
+            selectedDocumentos.length === 0
+              ? { backgroundColor: "#a5a5d6" }
+              : undefined
+          }
+          onPress={handleLancarOcorrenciaLote}
+          disabled={selectedDocumentos.length === 0}
+        >
+          <P className="font-bold text-white">GERAR OCORRÊNCIA EM LOTE</P>
+        </Button>
+
+        {/* Botão de marcar todos */}
+        <View className="mb-4 flex-row items-center">
+          <Button
+            className="flex-1 flex-row items-center bg-blue-900"
+            onPress={handleSelectAll}
+          >
+            {selectAll ? (
+              <>
+                <P className="text-base font-bold text-white">Selecionado(s)</P>
+                <View className="ml-8 h-6 w-8 items-center justify-center rounded-full border border-zinc-300 bg-white">
+                  <Check size={16} color="#2563eb" />
+                </View>
+              </>
+            ) : (
+              <>
+                <P className="text-base font-bold text-white">
+                  Selecionar Todos
+                </P>
+                <View className="ml-8 h-6 w-8 items-center justify-center rounded-full border border-zinc-300 bg-white" />
+              </>
+            )}
+          </Button>
+        </View>
+
         <FlatList
           data={entregas}
           keyExtractor={(item, index) =>
@@ -166,65 +258,106 @@ export function TransferScreen() {
               <H4 className="mt-10">Sem dados no momento...</H4>
             </View>
           )}
-          renderItem={({ item }) => (
-            <View className="mt-5">
-              <View className="rounded-lg border border-zinc-600 p-5">
-                <View className="mb-5 w-1/2 flex-row items-center justify-center gap-3 self-center rounded-xl bg-blue-900 p-3">
-                  <P className="text-white">Transferência N°</P>
-
-                  <View className="h-8 min-w-8 items-center justify-center rounded-full bg-white p-1">
-                    <P>{item.transferencia}</P>
+          renderItem={({ item }) => {
+            const id = String(item.transferencia) + "-" + item.frete;
+            return (
+              <View className="mt-5">
+                <View className="rounded-lg border border-zinc-600 p-5">
+                  <View className="w-1/1 mb-5 flex-row items-center justify-center gap-5 self-center rounded-lg bg-blue-900 p-3">
+                    <Button
+                      className="h-8 w-8 flex-1 flex-row items-center bg-transparent"
+                      style={{ backgroundColor: "transparent", elevation: 0 }}
+                      variant="default"
+                      onPress={() => {
+                        setSelectedDocumentos((prev) =>
+                          prev.includes(id)
+                            ? prev.filter((doc) => doc !== id)
+                            : [...prev, id],
+                        );
+                      }}
+                    >
+                      {selectedDocumentos.includes(id) ? (
+                        <>
+                          <P className="text-base font-bold text-white">
+                            Selecionado
+                          </P>
+                          <View className="ml-8 h-6 w-8 items-center justify-center rounded-full border border-zinc-300 bg-white">
+                            <Check size={16} color="#2563eb" />
+                          </View>
+                        </>
+                      ) : (
+                        <>
+                          <P className="text-base font-bold text-white">
+                            Selecionar
+                          </P>
+                          <View className="ml-8 h-6 w-8 items-center justify-center rounded-full border border-zinc-300 bg-white" />
+                        </>
+                      )}
+                    </Button>
                   </View>
-                </View>
 
-                <View className="flex-col">
-                  <View className="flex-row items-center gap-3">
-                    <P className="text-sm font-bold">CTE - {item.cte}</P>
+                  <View className="flex-col">
+                    <View className="flex-row items-center gap-3">
+                      <P className="text-sm font-bold">Frete - {item.frete}</P>
+                    </View>
+
+                    <View className="flex-row items-center gap-3">
+                      <P className="text-sm font-bold">
+                        Transferência - {item.transferencia}
+                      </P>
+                    </View>
+
+                    <View className="flex-row items-center gap-3">
+                      <P className="text-sm font-bold">CTE - {item.cte}</P>
+                    </View>
+
+                    <View className="flex-row items-center gap-3">
+                      <P className="text-sm">Destino - {item.destino}</P>
+                    </View>
+
+                    <View className="flex-row items-center gap-3">
+                      <P className="text-sm">Cidade - {item.cidade}</P>
+                    </View>
+
+                    <View className="flex-row items-center gap-3">
+                      <P className="text-sm">UF - {item.uf}</P>
+                    </View>
+
+                    <View className="flex-row items-center gap-3">
+                      <P className="text-sm font-bold">
+                        Status - {item.status}
+                      </P>
+                    </View>
                   </View>
 
-                  <View className="flex-row items-center gap-3">
-                    <P className="text-sm">Destino - {item.destino}</P>
+                  <View className="mt-8 items-center justify-center">
+                    <Button
+                      onPress={() => {
+                        setSelectedItem(item);
+                        setModalVisible(true);
+                      }}
+                      className="w-1/3"
+                      size="icon"
+                    >
+                      <P className="text-base font-bold text-white">Detalhes</P>
+                    </Button>
                   </View>
 
-                  <View className="flex-row items-center gap-3">
-                    <P className="text-sm">Cidade - {item.cidade}</P>
+                  <View className="mt-3 items-center justify-center">
+                    <Button
+                      className="w-1/2"
+                      style={{ backgroundColor: "#dc2626" }}
+                      onPress={() => handleLancarOcorrencia(item)}
+                    >
+                      <P className="text-base font-bold text-white">
+                        Lançar ocorrência
+                      </P>
+                    </Button>
                   </View>
-
-                  <View className="flex-row items-center gap-3">
-                    <P className="text-sm">UF - {item.uf}</P>
-                  </View>
-
-                  <View className="flex-row items-center gap-3">
-                    <P className="text-sm font-bold">Status - {item.status}</P>
-                  </View>
-                </View>
-
-                <View className="mt-8 items-center justify-center">
-                  <Button
-                    onPress={() => {
-                      setSelectedItem(item);
-                      setModalVisible(true);
-                    }}
-                    className="w-1/3"
-                    size="icon"
-                  >
-                    <P className="text-xl text-white">Detalhes</P>
-                  </Button>
-                </View>
-
-                <View className="mt-3 items-center justify-center">
-                  <Button
-                    size="icon"
-                    className="w-1/3 min-w-[200px]"
-                    style={{ backgroundColor: "#dc2626" }}
-                    onPress={() => handleLancarOcorrencia(item)}
-                  >
-                    <P className="text-xl text-white">Lançar ocorrência</P>
-                  </Button>
                 </View>
               </View>
-            </View>
-          )}
+            );
+          }}
         />
 
         <CustomModal
@@ -234,7 +367,7 @@ export function TransferScreen() {
           {selectedItem && (
             <View>
               <H1 className="text-white">
-                Transferência Número: {selectedItem.transferencia}
+                Transferência: {selectedItem.transferencia}
               </H1>
               <P className="text-white">CTE: {selectedItem.cte}</P>
               <P className="text-white">Destino: {selectedItem.destino}</P>
@@ -250,21 +383,47 @@ export function TransferScreen() {
             ref={bottomSheetRef}
             snapPoints={["25%", "50%", "90%"]}
             enablePanDownToClose={true}
-            onClose={() => setIsBottomSheetOpen(false)}
+            onClose={() => {
+              setIsBottomSheetOpen(false);
+              setIsLote(false);
+              setLoteTransferencias([]);
+              setLoteFretes([]);
+            }}
           >
             <BottomSheetView className="flex-1 p-4">
               <ScrollView showsVerticalScrollIndicator={false}>
                 <H4 className="mb-4">Lançar Ocorrência</H4>
-
+                {isLote && loteTransferencias.length > 0 && (
+                  <View className="mb-4">
+                    <P className="mb-2 font-bold text-blue-900">
+                      Ocorrência em lote para as Transferências/Fretes:
+                    </P>
+                    <P className="text-xs text-blue-900">
+                      {loteTransferencias.map(
+                        (trans, idx) =>
+                          ` Transferência: ${trans} - Frete: ${loteFretes[idx]} | `,
+                      )}
+                    </P>
+                  </View>
+                )}
                 <View className="mb-4">
-                  <P className="mb-2">Transferência Número:</P>
+                  <P className="mb-2">Transferência:</P>
                   <TextInput
                     className="h-12 rounded-lg border border-gray-300 px-4"
-                    value={minutaNumero}
+                    value={
+                      isLote ? loteTransferencias.join(", ") : minutaNumero
+                    }
                     editable={false}
                   />
                 </View>
-
+                <View className="mb-4">
+                  <P className="mb-2">Frete:</P>
+                  <TextInput
+                    className="h-12 rounded-lg border border-gray-300 px-4"
+                    value={isLote ? loteFretes.join(", ") : ""}
+                    editable={false}
+                  />
+                </View>
                 <View className="mb-4">
                   <P className="mb-2">Ocorrência:</P>
                   <Pressable

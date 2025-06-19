@@ -1,6 +1,6 @@
 import { Button } from "@components/Button";
 import { ContainerAppCpX } from "@components/ContainerAppCpX";
-import { H4, P } from "@components/Typography";
+import { H2, H3, H4, P } from "@components/Typography";
 import {
   ActivityIndicator,
   FlatList,
@@ -9,12 +9,14 @@ import {
   TouchableOpacity,
   View,
   TextInput,
+  Switch,
 } from "react-native";
-import { useEffect, useState, useMemo, useRef } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { getInfoEntrega, updateOcorrenciaEntrega } from "@/service/services";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import MaskInput from "react-native-mask-input";
 import { useRoute, RouteProp } from "@react-navigation/native";
+import { Check } from "lucide-react-native";
 
 type DeliveryScreenParams = {
   manifestoId: string;
@@ -52,6 +54,13 @@ export function DeliveryScreen() {
   const [observacao, setObservacao] = useState("");
   const [selectedOcorrencia, setSelectedOcorrencia] = useState("");
   const [isOcorrenciaSheetOpen, setIsOcorrenciaSheetOpen] = useState(false);
+  const [selectedDocumentos, setSelectedDocumentos] = useState<string[]>([]);
+  const [selectAll, setSelectAll] = useState(false);
+
+  // Novo estado para lote
+  const [loteDocs, setLoteDocs] = useState<string[]>([]);
+  const [loteFretes, setLoteFretes] = useState<string[]>([]);
+  const [isLote, setIsLote] = useState(false);
 
   const ocorrencias = [
     "Aguardado no local",
@@ -99,17 +108,26 @@ export function DeliveryScreen() {
         alert("Por favor, preencha todos os campos obrigatórios");
         return;
       }
-
-      await updateOcorrenciaEntrega(Number(documento), {
-        data_ocorrencia: data,
-        hora_ocorrencia: hora,
-        observacao: observacao,
-        ocorrencia: selectedOcorrencia,
-      });
-
+      if (isLote && loteDocs.length > 0) {
+        // Lançar ocorrência para todos os documentos/fretes em lote
+        for (let i = 0; i < loteDocs.length; i++) {
+          await updateOcorrenciaEntrega(Number(loteDocs[i]), {
+            data_ocorrencia: data,
+            hora_ocorrencia: hora,
+            observacao: observacao,
+            ocorrencia: selectedOcorrencia,
+          });
+        }
+      } else {
+        await updateOcorrenciaEntrega(Number(documento), {
+          data_ocorrencia: data,
+          hora_ocorrencia: hora,
+          observacao: observacao,
+          ocorrencia: selectedOcorrencia,
+        });
+      }
       // Atualiza a lista de entregas
       await fetchData();
-
       // Fecha o bottom sheet e limpa o formulário
       bottomSheetRef.current?.close();
       setIsBottomSheetOpen(false);
@@ -120,12 +138,53 @@ export function DeliveryScreen() {
       setHora("");
       setObservacao("");
       setSelectedOcorrencia("");
-
+      setIsLote(false);
+      setLoteDocs([]);
+      setLoteFretes([]);
       alert("Ocorrência salva com sucesso!");
     } catch (error) {
       console.error("Error saving ocorrencia:", error);
       alert("Erro ao salvar ocorrência. Por favor, tente novamente.");
     }
+  };
+
+  // Função para selecionar/desmarcar todos
+  const handleSelectAll = () => {
+    if (selectAll) {
+      setSelectedDocumentos([]);
+      setSelectAll(false);
+    } else {
+      const allIds = entregas.map(
+        (item) => String(item.documento) + "-" + item.frete,
+      );
+      setSelectedDocumentos(allIds);
+      setSelectAll(true);
+    }
+  };
+
+  // Função para lançar ocorrência em lote (abrir o menu para todos os selecionados)
+  const handleLancarOcorrenciaLote = () => {
+    if (selectedDocumentos.length === 0) {
+      alert("Selecione pelo menos uma entrega para lançar ocorrência em lote.");
+      return;
+    }
+    // Coletar todos os documentos e fretes selecionados
+    const docs: string[] = [];
+    const fretes: string[] = [];
+    selectedDocumentos.forEach((id) => {
+      const item = entregas.find(
+        (item) => String(item.documento) + "-" + item.frete === id,
+      );
+      if (item) {
+        docs.push(String(item.documento));
+        fretes.push(String(item.frete));
+      }
+    });
+    setLoteDocs(docs);
+    setLoteFretes(fretes);
+    setIsLote(true);
+    setIsBottomSheetOpen(true);
+    bottomSheetRef.current?.expand();
   };
 
   useEffect(() => {
@@ -147,9 +206,47 @@ export function DeliveryScreen() {
       <View className="flex-1 p-7">
         <H4 className="font-bold">Relação de Entrega</H4>
 
+        {/* Botão de ocorrência em lote */}
+        <Button
+          className={`mb-2 mt-6 w-full flex-row items-center ${selectedDocumentos.length > 0 ? "bg-blue-900" : ""}`}
+          style={
+            selectedDocumentos.length === 0
+              ? { backgroundColor: "#a5a5d6" }
+              : undefined
+          }
+          onPress={handleLancarOcorrenciaLote}
+          disabled={selectedDocumentos.length === 0}
+        >
+          <P className="font-bold text-white">GERAR OCORRÊNCIA EM LOTE</P>
+        </Button>
+
+        {/* Botão de marcar todos */}
+        <View className="mb-4 flex-row items-center">
+          <Button
+            className="flex-1 flex-row items-center bg-blue-900"
+            onPress={handleSelectAll}
+          >
+            {selectAll ? (
+              <>
+                <P className="text-base font-bold text-white">Selecionado(s)</P>
+                <View className="ml-8 h-6 w-8 items-center justify-center rounded-full border border-zinc-300 bg-white">
+                  <Check size={16} color="#2563eb" />
+                </View>
+              </>
+            ) : (
+              <>
+                <P className="text-base font-bold text-white">
+                  Selecionar Todos
+                </P>
+                <View className="ml-8 h-6 w-8 items-center justify-center rounded-full border border-zinc-300 bg-white" />
+              </>
+            )}
+          </Button>
+        </View>
+
         <FlatList
           data={entregas}
-          keyExtractor={(item, index) => String(item.cte + "srp" + index)}
+          keyExtractor={(item) => String(item.documento) + "-" + item.frete}
           showsVerticalScrollIndicator={false}
           refreshing={refreshing}
           onRefresh={onRefresh}
@@ -158,79 +255,112 @@ export function DeliveryScreen() {
               <H4 className="mt-10">Sem dados no momento...</H4>
             </View>
           )}
-          renderItem={({ item }) => (
-            <View className="mt-5">
-              <View className="rounded-lg border border-zinc-600 p-5">
-                <View className="mb-3 w-1/2 flex-row items-center justify-center gap-3 self-center rounded-lg bg-system p-3">
-                  <P className="text-white">DOCUMENTO</P>
-
-                  <View className="h-8 w-8 items-center justify-center rounded-full bg-white">
-                    <P>{item.documento}</P>
+          renderItem={({ item }) => {
+            const id = String(item.documento) + "-" + item.frete;
+            return (
+              <View className="mt-3">
+                <View className="rounded-lg border border-zinc-600 p-5">
+                  <View className="w-1/1 mb-5 flex-row items-center justify-center gap-5 self-center rounded-lg bg-blue-900 p-3">
+                    <Button
+                      className="h-8 w-8 flex-1 flex-row items-center bg-transparent"
+                      style={{ backgroundColor: "transparent", elevation: 0 }}
+                      variant="default"
+                      onPress={() => {
+                        setSelectedDocumentos((prev) =>
+                          prev.includes(id)
+                            ? prev.filter((doc) => doc !== id)
+                            : [...prev, id],
+                        );
+                      }}
+                    >
+                      {selectedDocumentos.includes(id) ? (
+                        <>
+                          <P className="text-base font-bold text-white">
+                            Selecionado
+                          </P>
+                          <View className="ml-8 h-6 w-8 items-center justify-center rounded-full border border-zinc-300 bg-white">
+                            <Check size={16} color="#2563eb" />
+                          </View>
+                        </>
+                      ) : (
+                        <>
+                          <P className="text-base font-bold text-white">
+                            Selecionar
+                          </P>
+                          <View className="ml-8 h-6 w-8 items-center justify-center rounded-full border border-zinc-300 bg-white" />
+                        </>
+                      )}
+                    </Button>
                   </View>
-                </View>
 
-                <View className="flex-col">
-                  <View className="flex-row items-center gap-3">
-                    <P className="text-sm font-bold">Frete - {item.frete}</P>
+                  <View className="flex-col">
+                    <View className="flex-row items-center gap-3">
+                      <P className="text-sm font-bold">
+                        Documento - {item.documento}
+                      </P>
+                    </View>
+
+                    <View className="flex-row items-center gap-3">
+                      <P className="text-sm font-bold">Frete - {item.frete}</P>
+                    </View>
+
+                    <View className="flex-row items-center gap-3">
+                      <P className="text-sm">CTE - {item.cte}</P>
+                    </View>
+
+                    <View className="flex-row items-center gap-3">
+                      <P className="text-sm">Destino - {item.destinatario}</P>
+                    </View>
+
+                    <View className="flex-row items-center gap-3">
+                      <P className="text-sm">Cidade - {item.cidade}</P>
+                    </View>
+
+                    <View className="flex-row items-center gap-3">
+                      <P className="text-sm">UF - {item.uf}</P>
+                    </View>
+
+                    <View className="flex-row items-center gap-3">
+                      <P className="text-sm font-bold">
+                        Status - {item.status}
+                      </P>
+                    </View>
+
+                    <View className="flex-row items-center gap-3">
+                      <P className="text-sm">Ocorrência - {item.ocorrencia}</P>
+                    </View>
                   </View>
 
-                  <View className="flex-row items-center gap-3">
-                    <P className="text-sm">CTE - {item.cte}</P>
+                  <View className="mt-5 items-center justify-center">
+                    <Button
+                      size="icon"
+                      className="w-1/3"
+                      onPress={() => {
+                        setSelectedItem(item);
+                        setModalVisible(true);
+                      }}
+                    >
+                      <P className="text-base font-bold text-white">Detalhes</P>
+                    </Button>
                   </View>
 
-                  <View className="flex-row items-center gap-3">
-                    <P className="text-sm">Destino - {item.destinatario}</P>
+                  <View className="mt-2 items-center justify-center">
+                    <Button
+                      className="w-1/2"
+                      style={{ backgroundColor: "#dc2626" }}
+                      onPress={() =>
+                        handleLancarOcorrencia(item.documento, item.frete)
+                      }
+                    >
+                      <P className="text-base font-bold text-white">
+                        Lançar ocorrência
+                      </P>
+                    </Button>
                   </View>
-
-                  <View className="flex-row items-center gap-3">
-                    <P className="text-sm">Cidade - {item.cidade}</P>
-                  </View>
-
-                  <View className="flex-row items-center gap-3">
-                    <P className="text-sm">UF - {item.uf}</P>
-                  </View>
-
-                  <View className="flex-row items-center gap-3">
-                    <P className="text-sm font-bold">Status - {item.status}</P>
-                  </View>
-
-                  <View className="flex-row items-center gap-3">
-                    <P className="text-sm">Ocorrência - {item.ocorrencia}</P>
-                  </View>
-                </View>
-
-                <View className="mt-8 items-center justify-center">
-                  <Button
-                    className="w-1/3"
-                    size={"icon"}
-                    variant="default"
-                    // onPress={() => alert('Detalhes')}
-                    onPress={() => {
-                      setSelectedItem(item);
-                      setModalVisible(true);
-                    }}
-                  >
-                    <P className="text-base font-bold text-white">Detalhes</P>
-                  </Button>
-                </View>
-
-                <View className="mt-2 items-center justify-center">
-                  <Button
-                    size="icon"
-                    className="w-1/3 min-w-[200px]"
-                    style={{ backgroundColor: "#dc2626" }}
-                    onPress={() =>
-                      handleLancarOcorrencia(item.documento, item.frete)
-                    }
-                  >
-                    <P className="text-base font-bold text-white">
-                      Lançar ocorrência
-                    </P>
-                  </Button>
                 </View>
               </View>
-            </View>
-          )}
+            );
+          }}
         />
 
         <Modal
@@ -312,16 +442,34 @@ export function DeliveryScreen() {
             ref={bottomSheetRef}
             snapPoints={snapPoints}
             enablePanDownToClose={true}
-            onClose={() => setIsBottomSheetOpen(false)}
+            onClose={() => {
+              setIsBottomSheetOpen(false);
+              setIsLote(false);
+              setLoteDocs([]);
+              setLoteFretes([]);
+            }}
           >
             <BottomSheetView className="flex-1 p-4">
               <H4 className="mb-4">Lançar Ocorrência</H4>
+              {isLote && loteDocs.length > 0 && (
+                <View className="mb-4">
+                  <P className="mb-2 font-bold text-blue-900">
+                    Ocorrência em lote para os documentos/fretes:
+                  </P>
+                  <P className="text-xs text-blue-900">
+                    {loteDocs.map(
+                      (doc, idx) =>
+                        ` Doc: ${doc} - Frete: ${loteFretes[idx]} | `,
+                    )}
+                  </P>
+                </View>
+              )}
 
               <View className="mb-4">
                 <P className="mb-2">Documento / NF:</P>
                 <TextInput
                   className="h-12 rounded-lg border border-gray-300 px-4"
-                  value={documento}
+                  value={isLote ? loteDocs.join(", ") : documento}
                   editable={false}
                   onChangeText={setDocumento}
                   keyboardType="numeric"
@@ -332,7 +480,7 @@ export function DeliveryScreen() {
                 <P className="mb-2">Frete:</P>
                 <TextInput
                   className="h-12 rounded-lg border border-gray-300 px-4"
-                  value={frete}
+                  value={isLote ? loteFretes.join(", ") : frete}
                   onChangeText={setFrete}
                   editable={false}
                   keyboardType="numeric"

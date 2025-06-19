@@ -1,3 +1,4 @@
+import React, { useEffect, useRef, useState } from "react";
 import { Button } from "@components/Button";
 import { ContainerAppCpX } from "@components/ContainerAppCpX";
 import { H1, H4, P } from "@components/Typography";
@@ -10,12 +11,12 @@ import {
   View,
 } from "react-native";
 
-import { useEffect, useRef, useState } from "react";
 import { getInfoRetirada, updateOcorrenciaRetirada } from "@/service/services";
 import { CustomModal } from "@/components/CustomModal";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import MaskInput from "react-native-mask-input";
 import { useRoute, RouteProp } from "@react-navigation/native";
+import { Check } from "lucide-react-native";
 
 type WithdrawalScreenParams = {
   manifestoId: string;
@@ -44,6 +45,12 @@ export function WithDrawalScreen() {
   const [hora, setHora] = useState("");
   const [observacao, setObservacao] = useState("");
   const [retiradaId, setRetiradaId] = useState("");
+  const [selectedDocumentos, setSelectedDocumentos] = useState<string[]>([]);
+  const [selectAll, setSelectAll] = useState(false);
+  // Para ocorrência em lote
+  const [loteIds, setLoteIds] = useState<string[]>([]);
+  const [loteFretes, setLoteFretes] = useState<string[]>([]);
+  const [isLote, setIsLote] = useState(false);
 
   const ocorrencias = [
     "Retirada cancelada",
@@ -83,33 +90,82 @@ export function WithDrawalScreen() {
     bottomSheetRef.current?.expand();
   };
 
+  // Selecionar/desmarcar todos
+  const handleSelectAll = () => {
+    if (selectAll) {
+      setSelectedDocumentos([]);
+      setSelectAll(false);
+    } else {
+      const allIds = retiradas.map(
+        (item) => String(item.retirada) + "-" + item.frete,
+      );
+      setSelectedDocumentos(allIds);
+      setSelectAll(true);
+    }
+  };
+
+  // GERAR OCORRÊNCIA EM LOTE
+  const handleLancarOcorrenciaLote = () => {
+    if (selectedDocumentos.length === 0) {
+      alert(
+        "Selecione pelo menos uma retirada para lançar ocorrência em lote.",
+      );
+      return;
+    }
+    // Coletar todos os ids e fretes selecionados
+    const ids: string[] = [];
+    const fretes: string[] = [];
+    selectedDocumentos.forEach((id) => {
+      const item = retiradas.find(
+        (item) => String(item.retirada) + "-" + item.frete === id,
+      );
+      if (item) {
+        ids.push(String(item.retirada));
+        fretes.push(String(item.frete));
+      }
+    });
+    setLoteIds(ids);
+    setLoteFretes(fretes);
+    setIsLote(true);
+    setIsBottomSheetOpen(true);
+    bottomSheetRef.current?.expand();
+  };
+
+  // Salvar ocorrência (individual ou em lote)
   const handleSalvarOcorrencia = async () => {
     try {
       if (!selectedOcorrencia || !data || !hora) {
         alert("Por favor, preencha todos os campos obrigatórios");
         return;
       }
-
-      await updateOcorrenciaRetirada(Number(retiradaId), {
-        data_ocorrencia: data,
-        hora_ocorrencia: hora,
-        observacao: observacao,
-        ocorrencia: selectedOcorrencia,
-      });
-
-      // Atualiza a lista de retiradas
+      if (isLote && loteIds.length > 0) {
+        for (let i = 0; i < loteIds.length; i++) {
+          await updateOcorrenciaRetirada(Number(loteIds[i]), {
+            data_ocorrencia: data,
+            hora_ocorrencia: hora,
+            observacao: observacao,
+            ocorrencia: selectedOcorrencia,
+          });
+        }
+      } else {
+        await updateOcorrenciaRetirada(Number(retiradaId), {
+          data_ocorrencia: data,
+          hora_ocorrencia: hora,
+          observacao: observacao,
+          ocorrencia: selectedOcorrencia,
+        });
+      }
       await fetchData();
-
-      // Fecha o bottom sheet e limpa o formulário
       bottomSheetRef.current?.close();
       setIsBottomSheetOpen(false);
-      // Reset form
       setRetiradaId("");
       setData("");
       setHora("");
       setObservacao("");
       setSelectedOcorrencia("");
-
+      setIsLote(false);
+      setLoteIds([]);
+      setLoteFretes([]);
       alert("Ocorrência salva com sucesso!");
     } catch (error) {
       console.error("Error saving ocorrencia:", error);
@@ -136,6 +192,44 @@ export function WithDrawalScreen() {
       <View className="flex-1 p-7">
         <H4>Relação de Retirada</H4>
 
+        {/* Botão de ocorrência em lote */}
+        <Button
+          className={`mb-2 mt-6 w-full flex-row items-center ${selectedDocumentos.length > 0 ? "bg-blue-900" : ""}`}
+          style={
+            selectedDocumentos.length === 0
+              ? { backgroundColor: "#a5a5d6" }
+              : undefined
+          }
+          onPress={handleLancarOcorrenciaLote}
+          disabled={selectedDocumentos.length === 0}
+        >
+          <P className="font-bold text-white">GERAR OCORRÊNCIA EM LOTE</P>
+        </Button>
+
+        {/* Botão de marcar todos */}
+        <View className="mb-4 flex-row items-center">
+          <Button
+            className="flex-1 flex-row items-center bg-blue-900"
+            onPress={handleSelectAll}
+          >
+            {selectAll ? (
+              <>
+                <P className="text-base font-bold text-white">Selecionado(s)</P>
+                <View className="ml-8 h-6 w-8 items-center justify-center rounded-full border border-zinc-300 bg-white">
+                  <Check size={16} color="#2563eb" />
+                </View>
+              </>
+            ) : (
+              <>
+                <P className="text-base font-bold text-white">
+                  Selecionar Todos
+                </P>
+                <View className="ml-8 h-6 w-8 items-center justify-center rounded-full border border-zinc-300 bg-white" />
+              </>
+            )}
+          </Button>
+        </View>
+
         <FlatList
           data={retiradas}
           keyExtractor={(item, index) => String(item.retirada + "srp" + index)}
@@ -147,71 +241,105 @@ export function WithDrawalScreen() {
               <H4 className="mt-10">Sem dados no momento...</H4>
             </View>
           )}
-          renderItem={({ item }) => (
-            <View className="mt-5">
-              <View className="rounded-lg border border-zinc-600 p-5">
-                <View className="mb-5 w-1/2 flex-row items-center justify-center gap-3 self-center rounded-xl bg-blue-900 p-3">
-                  <P className="text-white">Frete N°</P>
-
-                  <View className="h-8 min-w-8 items-center justify-center rounded-full bg-white p-1">
-                    <P>{item.frete}</P>
+          renderItem={({ item }) => {
+            const id = String(item.retirada) + "-" + item.frete;
+            return (
+              <View className="mt-5">
+                <View className="rounded-lg border border-zinc-600 p-5">
+                  <View className="w-1/1 mb-5 flex-row items-center justify-center gap-5 self-center rounded-lg bg-blue-900 p-3">
+                    <Button
+                      className="h-8 w-8 flex-1 flex-row items-center bg-transparent"
+                      style={{ backgroundColor: "transparent", elevation: 0 }}
+                      variant="default"
+                      onPress={() => {
+                        setSelectedDocumentos((prev) =>
+                          prev.includes(id)
+                            ? prev.filter((doc) => doc !== id)
+                            : [...prev, id],
+                        );
+                      }}
+                    >
+                      {selectedDocumentos.includes(id) ? (
+                        <>
+                          <P className="text-base font-bold text-white">
+                            Selecionado
+                          </P>
+                          <View className="ml-8 h-6 w-8 items-center justify-center rounded-full border border-zinc-300 bg-white">
+                            <Check size={16} color="#2563eb" />
+                          </View>
+                        </>
+                      ) : (
+                        <>
+                          <P className="text-base font-bold text-white">
+                            Selecionar
+                          </P>
+                          <View className="ml-8 h-6 w-8 items-center justify-center rounded-full border border-zinc-300 bg-white" />
+                        </>
+                      )}
+                    </Button>
                   </View>
-                </View>
+                  <View className="flex-col">
+                    <View className="flex-row items-center gap-3">
+                      <P className="text-sm font-bold">Frete - {item.frete}</P>
+                    </View>
 
-                <View className="flex-col">
-                  <View className="flex-row items-center gap-3">
-                    <P className="text-sm font-bold">
-                      Retirada - {item.retirada}
-                    </P>
+                    <View className="flex-row items-center gap-3">
+                      <P className="text-sm font-bold">
+                        Retirada - {item.retirada}
+                      </P>
+                    </View>
+
+                    <View className="flex-row items-center gap-3">
+                      <P className="text-sm">CTE - {item.cte}</P>
+                    </View>
+
+                    <View className="flex-row items-center gap-3">
+                      <P className="text-sm">Destino - {item.destino}</P>
+                    </View>
+
+                    <View className="flex-row items-center gap-3">
+                      <P className="text-sm">Cidade - {item.cidade}</P>
+                    </View>
+
+                    <View className="flex-row items-center gap-3">
+                      <P className="text-sm">UF - {item.uf}</P>
+                    </View>
+
+                    <View className="flex-row items-center gap-3">
+                      <P className="text-sm font-bold">
+                        Status - {item.status}
+                      </P>
+                    </View>
                   </View>
 
-                  <View className="flex-row items-center gap-3">
-                    <P className="text-sm">CTE - {item.cte}</P>
+                  <View className="mt-8 items-center justify-center">
+                    <Button
+                      onPress={() => {
+                        setSelectedItem(item);
+                        setModalVisible(true);
+                      }}
+                      className="w-1/3"
+                      size="icon"
+                    >
+                      <P className="text-base font-bold text-white">Detalhes</P>
+                    </Button>
                   </View>
 
-                  <View className="flex-row items-center gap-3">
-                    <P className="text-sm">Destino - {item.destino}</P>
+                  <View className="mt-3 items-center justify-center">
+                    <Button
+                      className="w-1/2"
+                      style={{ backgroundColor: "#dc2626" }}
+                      onPress={() => handleLancarOcorrencia(item)}
+                    >
+                      <P className="text-base font-bold text-white">
+                        Lançar ocorrência
+                      </P>
+                    </Button>
                   </View>
-
-                  <View className="flex-row items-center gap-3">
-                    <P className="text-sm">Cidade - {item.cidade}</P>
-                  </View>
-
-                  <View className="flex-row items-center gap-3">
-                    <P className="text-sm">UF - {item.uf}</P>
-                  </View>
-
-                  <View className="flex-row items-center gap-3">
-                    <P className="text-sm font-bold">Status - {item.status}</P>
-                  </View>
-                </View>
-
-                <View className="mt-8 items-center justify-center">
-                  <Button
-                    onPress={() => {
-                      setSelectedItem(item);
-                      setModalVisible(true);
-                    }}
-                    className="w-1/3"
-                    size="icon"
-                  >
-                    <P className="text-xl text-white">Detalhes</P>
-                  </Button>
-                </View>
-
-                <View className="mt-3 items-center justify-center">
-                  <Button
-                    size="icon"
-                    className="w-1/3 min-w-[200px]"
-                    style={{ backgroundColor: "#dc2626" }}
-                    onPress={() => handleLancarOcorrencia(item)}
-                  >
-                    <P className="text-xl text-white">Lançar ocorrência</P>
-                  </Button>
                 </View>
               </View>
-            </View>
-          )}
+            );
+          }}
         />
 
         <CustomModal
@@ -236,21 +364,45 @@ export function WithDrawalScreen() {
             ref={bottomSheetRef}
             snapPoints={["25%", "50%", "90%"]}
             enablePanDownToClose={true}
-            onClose={() => setIsBottomSheetOpen(false)}
+            onClose={() => {
+              setIsBottomSheetOpen(false);
+              setIsLote(false);
+              setLoteIds([]);
+              setLoteFretes([]);
+            }}
           >
             <BottomSheetView className="flex-1 p-4">
               <ScrollView showsVerticalScrollIndicator={false}>
                 <H4 className="mb-4">Lançar Ocorrência</H4>
-
+                {isLote && loteIds.length > 0 && (
+                  <View className="mb-4">
+                    <P className="mb-2 font-bold text-blue-900">
+                      Ocorrência em lote para os IDs/fretes:
+                    </P>
+                    <P className="text-xs text-blue-900">
+                      {loteIds.map(
+                        (id, idx) =>
+                          ` Retirada: ${id} - Frete: ${loteFretes[idx]} | `,
+                      )}
+                    </P>
+                  </View>
+                )}
                 <View className="mb-4">
-                  <P className="mb-2">Retirada ID:</P>
+                  <P className="mb-2">Retirada:</P>
                   <TextInput
                     className="h-12 rounded-lg border border-gray-300 px-4"
-                    value={retiradaId}
+                    value={isLote ? loteIds.join(", ") : retiradaId}
                     editable={false}
                   />
                 </View>
-
+                <View className="mb-4">
+                  <P className="mb-2">Frete:</P>
+                  <TextInput
+                    className="h-12 rounded-lg border border-gray-300 px-4"
+                    value={isLote ? loteFretes.join(", ") : ""}
+                    editable={false}
+                  />
+                </View>
                 <View className="mb-4">
                   <P className="mb-2">Ocorrência:</P>
                   <Pressable

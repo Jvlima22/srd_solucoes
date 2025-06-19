@@ -183,13 +183,17 @@ export function CollectionScreen() {
 
                 <View className="flex-col">
                   <View className="flex-row items-center gap-3">
+                    <P className="text-sm font-bold">Coleta - {item.coleta}</P>
+                  </View>
+
+                  <View className="flex-row items-center gap-3">
                     <P className="text-sm font-bold">
                       Total Documento - {item.totalDocumento}
                     </P>
                   </View>
 
                   <View className="flex-row items-center gap-3">
-                    <P className="text-sm">Volume - {item.volume || "N/A"}</P>
+                    <P className="text-sm">Volume - {item.volume}</P>
                   </View>
 
                   <View className="flex-row items-center gap-3">
@@ -197,23 +201,19 @@ export function CollectionScreen() {
                   </View>
 
                   <View className="flex-row items-center gap-3">
-                    <P className="text-sm">
-                      Local - {item.destinatario || "N/A"}
-                    </P>
+                    <P className="text-sm">Local - {item.destinatario}</P>
                   </View>
 
                   <View className="flex-row items-center gap-3">
-                    <P className="text-sm">Cidade - {item.cidade || "N/A"}</P>
+                    <P className="text-sm">Cidade - {item.cidade}</P>
                   </View>
 
                   <View className="flex-row items-center gap-3">
-                    <P className="text-sm">UF - {item.uf || "N/A"}</P>
+                    <P className="text-sm">UF - {item.uf}</P>
                   </View>
 
                   <View className="flex-row items-center gap-3">
-                    <P className="text-sm font-bold">
-                      Status - {item.status || "N/A"}
-                    </P>
+                    <P className="text-sm font-bold">Status - {item.status}</P>
                   </View>
                 </View>
 
@@ -232,8 +232,7 @@ export function CollectionScreen() {
 
                 <View className="mt-3 items-center justify-center">
                   <Button
-                    size="icon"
-                    className="w-1/3 min-w-[200px]"
+                    className="w-1/2"
                     style={{ backgroundColor: "#dc2626" }}
                     onPress={() => handleLancarOcorrencia(item)}
                   >
@@ -259,20 +258,12 @@ export function CollectionScreen() {
               <P className="text-white">
                 Total Documentos: {selectedItem.totalDocumento}
               </P>
-              <P className="text-white">
-                Volume: {selectedItem.volume || "N/A"}
-              </P>
+              <P className="text-white">Volume: {selectedItem.volume}</P>
               <P className="text-white">Peso: {selectedItem.peso} kg</P>
-              <P className="text-white">
-                Local: {selectedItem.destinatario || "N/A"}
-              </P>
-              <P className="text-white">
-                Cidade: {selectedItem.cidade || "N/A"}
-              </P>
-              <P className="text-white">UF: {selectedItem.uf || "N/A"}</P>
-              <P className="text-white">
-                Status: {selectedItem.status || "N/A"}
-              </P>
+              <P className="text-white">Local: {selectedItem.destinatario}</P>
+              <P className="text-white">Cidade: {selectedItem.cidade}</P>
+              <P className="text-white">UF: {selectedItem.uf}</P>
+              <P className="text-white">Status: {selectedItem.status}</P>
             </View>
           )}
         </CustomModal>
