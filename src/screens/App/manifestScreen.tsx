@@ -1,4 +1,4 @@
-import React, { createRef, useEffect, useState, useCallback } from "react";
+import React, { createRef, useEffect, useState } from "react";
 import {
   Image,
   ScrollView,
@@ -8,6 +8,8 @@ import {
   TouchableOpacity,
   View,
   Pressable,
+  Modal,
+  Text,
 } from "react-native";
 import { Button } from "@components/Button";
 import { ContainerAppCpX } from "@components/ContainerAppCpX";
@@ -20,6 +22,8 @@ import {
   NavigationProp,
 } from "@react-navigation/native";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
+import { useAuth } from "@/hooks/useAuth";
+import { api } from "@/service/api";
 
 import ArrowRight from "@assets/Arrow-right.png";
 import ArrowLeft from "@assets/Arrow-left.png";
@@ -31,7 +35,6 @@ import {
   BottomSheetPicker,
 } from "@components/BottomSheetPicker";
 import { getInfoManifest } from "@/service/services";
-import { api } from "@/service/api";
 import type { RootStackParamList } from "../../@types/routes";
 
 interface RootObject {
@@ -51,8 +54,6 @@ interface RootObject {
   total_frete?: number;
   total_volume?: number;
 }
-
-type TransportStatus = "..." | "EM ABERTO" | "EM TRANSITO" | "FINALIZADO";
 
 // Definir o tipo dos parâmetros de rota para ManifestScreen
 type ManifestScreenParams = {
@@ -77,21 +78,25 @@ export function ManifestScreen() {
   const [searchTerm, setSearchTerm] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
   const [ocorrencias] = useState<RootObject[]>([]);
-  const [transportStatus, setTransportStatus] =
-    useState<TransportStatus>("...");
-  const [activeManifestId, setActiveManifestId] = useState<number | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
-  const [selectedManifestId, setSelectedManifestId] = useState<number | null>(
+  const { user } = useAuth();
+  const [showStartTransportModal, setShowStartTransportModal] = useState(false);
+  const [pendingManifestId, setPendingManifestId] = useState<number | null>(
     null,
   );
+  const [dataSaida, setDataSaida] = useState("");
+  const [horaSaida, setHoraSaida] = useState("");
+  const [sending, setSending] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
     try {
       const response = await getInfoManifest();
       setManifests(response.data);
+      return response.data;
     } catch (error) {
       console.error("Error fetching data:", error);
+      return [];
     } finally {
       setLoading(false);
     }
@@ -130,60 +135,6 @@ export function ManifestScreen() {
     }
     return true;
   });
-
-  const handleIniciarTransporte = useCallback(async (idManifesto: number) => {
-    try {
-      // Busca o manifesto específico
-      const manifestoResponse = await api.get(`/manifestos/${idManifesto}`);
-      const manifestoData = manifestoResponse.data;
-
-      // Busca os status disponíveis
-      const statusResponse = await api.get("/status");
-      const statusData = statusResponse.data;
-
-      // Encontra o status correspondente ao status do manifesto
-      const currentStatus = statusData.find(
-        (status: any) => status.id === manifestoData.status,
-      );
-
-      if (currentStatus) {
-        setActiveManifestId(idManifesto);
-        setTransportStatus(currentStatus.nome);
-        console.log("Status atual:", currentStatus.nome); // Debug log
-      } else {
-        console.log(
-          "Status não encontrado para o manifesto:",
-          manifestoData.status,
-        ); // Debug log
-      }
-    } catch (error) {
-      console.error("Erro ao buscar status do manifesto:", error);
-    }
-  }, []);
-
-  const checkTransportStatus = () => {
-    if (!activeManifestId) return "...";
-
-    const allCompleted = ocorrencias.every(
-      (ocorrencia) => ocorrencia.status === "FINALIZADO",
-    );
-
-    if (allCompleted) {
-      setTransportStatus("FINALIZADO");
-      return "FINALIZADO";
-    }
-
-    const hasInProgress = ocorrencias.some(
-      (ocorrencia) => ocorrencia.status === "EM TRANSITO",
-    );
-
-    if (hasInProgress) {
-      setTransportStatus("EM TRANSITO");
-      return "EM TRANSITO";
-    }
-
-    return transportStatus;
-  };
 
   const handleNavigateToScreen = (tipo: string, manifestoId: number) => {
     setModalVisible(false);
@@ -420,17 +371,22 @@ export function ManifestScreen() {
                     <Button
                       className="w-1/2"
                       style={{
-                        backgroundColor:
-                          activeManifestId === item.id_manifesto
-                            ? "#1e40af"
-                            : "#dc2626",
+                        backgroundColor: item.status_nome
+                          ? "#dc2626"
+                          : "#1e40af",
                       }}
-                      onPress={() => handleIniciarTransporte(item.id_manifesto)}
+                      onPress={() => {
+                        if (item.status_nome) {
+                          setPendingManifestId(item.id_manifesto);
+                          setShowStartTransportModal(true);
+                        }
+                      }}
+                      disabled={item.status_nome !== "EM ABERTO"}
                     >
                       <H3 className="text-base font-bold text-white">
-                        {activeManifestId === item.id_manifesto
-                          ? checkTransportStatus()
-                          : "Iniciar transporte"}
+                        {item.status_nome
+                          ? "Iniciar transporte"
+                          : item.status_nome}
                       </H3>
                     </Button>
                   </View>
@@ -453,9 +409,6 @@ export function ManifestScreen() {
         onChangeValue={(value) => {
           setSelectStatus(value);
           setStatusFilter(value.value);
-          if (selectedManifestId) {
-            handleNavigateToScreen(value.name, selectedManifestId);
-          }
         }}
       />
 
@@ -520,6 +473,115 @@ export function ManifestScreen() {
           </BottomSheetView>
         </BottomSheet>
       )}
+
+      <Modal
+        visible={showStartTransportModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowStartTransportModal(false)}
+      >
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            backgroundColor: "rgba(0,0,0,0.5)",
+          }}
+        >
+          <View
+            style={{
+              width: 340,
+              backgroundColor: "white",
+              borderRadius: 10,
+              padding: 20,
+            }}
+          >
+            <H4 className="mb-4 text-center">Iniciar Transporte</H4>
+            <View style={{ marginBottom: 12 }}>
+              <Text>Data Saída:</Text>
+              <TextInput
+                value={dataSaida}
+                onChangeText={setDataSaida}
+                placeholder="AAAA-MM-DD"
+                style={{
+                  borderWidth: 1,
+                  borderColor: "#ccc",
+                  borderRadius: 6,
+                  padding: 8,
+                  marginTop: 4,
+                }}
+              />
+            </View>
+            <View style={{ marginBottom: 12 }}>
+              <Text>Hora Saída:</Text>
+              <TextInput
+                value={horaSaida}
+                onChangeText={setHoraSaida}
+                placeholder="HH:MM"
+                style={{
+                  borderWidth: 1,
+                  borderColor: "#ccc",
+                  borderRadius: 6,
+                  padding: 8,
+                  marginTop: 4,
+                }}
+              />
+            </View>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                marginTop: 16,
+              }}
+            >
+              <Button
+                style={{ backgroundColor: "#ED9C2A", flex: 1, marginRight: 8 }}
+                onPress={() => setShowStartTransportModal(false)}
+              >
+                <H3 className="text-base font-bold text-white">Voltar</H3>
+              </Button>
+              <Button
+                style={{ backgroundColor: "#1e40af", flex: 1, marginLeft: 8 }}
+                disabled={sending || !dataSaida || !horaSaida}
+                onPress={async () => {
+                  if (
+                    !pendingManifestId ||
+                    !user?.id ||
+                    !dataSaida ||
+                    !horaSaida
+                  )
+                    return;
+                  setSending(true);
+                  try {
+                    await api.post("/transporte/iniciar", {
+                      id_manifesto: pendingManifestId,
+                      id_motorista: user.id,
+                      data_saida: dataSaida,
+                      hora_saida: horaSaida,
+                    });
+                    setShowStartTransportModal(false);
+                    setPendingManifestId(null);
+                    setDataSaida("");
+                    setHoraSaida("");
+                    const novosManifests = await fetchData(); // Aguarda atualizar a lista e pega o novo array
+                    const manifestoAtualizado = novosManifests.find(
+                      (m) => m.id_manifesto === pendingManifestId,
+                    );
+                    if (manifestoAtualizado) {
+                    }
+                  } catch {
+                    alert("Erro ao iniciar transporte.");
+                  } finally {
+                    setSending(false);
+                  }
+                }}
+              >
+                <H3 className="text-base font-bold text-white">Salvar</H3>
+              </Button>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </>
   );
 }

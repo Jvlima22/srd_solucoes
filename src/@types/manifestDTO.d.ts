@@ -6,4 +6,5 @@ interface manifestDTO {
   transferencia: string;
   despacho: string;
   status: number;
+  status_nome: string;
 }
