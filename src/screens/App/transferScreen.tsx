@@ -4,18 +4,11 @@ import { H1, H4, P } from "@components/Typography";
 import {
   ActivityIndicator,
   FlatList,
-  Image,
   Pressable,
   ScrollView,
   TextInput,
   View,
 } from "react-native";
-
-import ArrowRight from "@assets/Arrow-right.png";
-import ArrowLeft from "@assets/Arrow-left.png";
-import ArrowUp from "@assets/Arrow-up.png";
-import ArrowDown from "@assets/Arrow-down.png";
-import CurvedArrow from "@assets/Curved-Arrow.png";
 import React, { useEffect, useRef, useState } from "react";
 import { getInfoTransferencia } from "@/service/services";
 import { CustomModal } from "@/components/CustomModal";
@@ -35,7 +28,7 @@ type TransferScreenRouteProp = RouteProp<
 
 export function TransferScreen() {
   const route = useRoute<TransferScreenRouteProp>();
-  const manifestoId = route.params?.manifestoId || "1"; // Default to "1" if not provided
+  const manifestoId = route.params?.manifestoId;
   const [entregas, setEntregas] = useState<transferenciaDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);

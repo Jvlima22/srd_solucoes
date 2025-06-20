@@ -13,8 +13,12 @@ import { Button } from "@components/Button";
 import { ContainerAppCpX } from "@components/ContainerAppCpX";
 import { H3, H4, P } from "@components/Typography";
 import { ChevronDown as IconDown } from "lucide-react-native";
-import axios from "axios";
-import { useNavigation } from "@react-navigation/native";
+import {
+  useNavigation,
+  useRoute,
+  RouteProp,
+  NavigationProp,
+} from "@react-navigation/native";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 
 import ArrowRight from "@assets/Arrow-right.png";
@@ -28,6 +32,7 @@ import {
 } from "@components/BottomSheetPicker";
 import { getInfoManifest } from "@/service/services";
 import { api } from "@/service/api";
+import type { RootStackParamList } from "../../@types/routes";
 
 interface RootObject {
   tipo: string;
@@ -49,8 +54,16 @@ interface RootObject {
 
 type TransportStatus = "..." | "EM ABERTO" | "EM TRANSITO" | "FINALIZADO";
 
+// Definir o tipo dos parâmetros de rota para ManifestScreen
+type ManifestScreenParams = {
+  manifestoId: number;
+};
+
 export function ManifestScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const route =
+    useRoute<RouteProp<{ params: ManifestScreenParams }, "params">>();
+  const manifestoId = route.params?.manifestoId ?? null;
   const [selectStatus, setSelectStatus] = useState<{
     name: string;
     value: string;
@@ -63,10 +76,14 @@ export function ManifestScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
-  const [ocorrencias, setOcorrencias] = useState<RootObject[]>([]);
+  const [ocorrencias] = useState<RootObject[]>([]);
   const [transportStatus, setTransportStatus] =
     useState<TransportStatus>("...");
   const [activeManifestId, setActiveManifestId] = useState<number | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [selectedManifestId, setSelectedManifestId] = useState<number | null>(
+    null,
+  );
 
   const fetchData = async () => {
     setLoading(true);
@@ -96,9 +113,23 @@ export function ManifestScreen() {
     fetchData();
   }, []);
 
-  const filteredManifests = manifests.filter((manifest) =>
-    manifest.id_manifesto.toString().includes(searchTerm),
-  );
+  const filteredManifests = manifests.filter((manifest) => {
+    // Se houver manifestoId na rota, filtra por ele
+    if (manifestoId !== null && manifest.id_manifesto !== manifestoId) {
+      return false;
+    }
+    // Se houver searchTerm, filtra por número do manifesto
+    if (searchTerm && !manifest.id_manifesto.toString().includes(searchTerm)) {
+      return false;
+    }
+    // Se houver statusFilter, filtra por status ID
+    if (statusFilter && statusFilter !== "") {
+      if (String(manifest.status) !== statusFilter) {
+        return false;
+      }
+    }
+    return true;
+  });
 
   const handleIniciarTransporte = useCallback(async (idManifesto: number) => {
     try {
@@ -154,26 +185,36 @@ export function ManifestScreen() {
     return transportStatus;
   };
 
-  const handleNavigateToScreen = (tipo: string) => {
+  const handleNavigateToScreen = (tipo: string, manifestoId: number) => {
     setModalVisible(false);
     bottomSheetRef.current?.close();
 
     switch (tipo.toLowerCase()) {
       case "entrega":
-        navigation.navigate("DeliveryScreen" as never);
+        navigation.navigate("DeliveryScreen", {
+          manifestoId: String(manifestoId),
+        });
         break;
       case "coleta":
-        navigation.navigate("CollectionScreen" as never);
+        navigation.navigate("CollectionScreen", {
+          manifestoId: String(manifestoId),
+        });
         break;
       case "despacho":
-        navigation.navigate("DispatchScreen" as never);
+        navigation.navigate("DispatchScreen", {
+          manifestoId: String(manifestoId),
+        });
         break;
       case "retirada":
-        navigation.navigate("WithDrawalScreen" as never);
+        navigation.navigate("WithDrawalScreen", {
+          manifestoId: String(manifestoId),
+        });
         break;
       case "transferência":
       case "transferencia":
-        navigation.navigate("TransferScreen" as never);
+        navigation.navigate("TransferScreen", {
+          manifestoId: String(manifestoId),
+        });
         break;
       default:
         break;
@@ -270,29 +311,13 @@ export function ManifestScreen() {
                   </View>
                 </View>
 
-                {/* <View className="mt-4 w-full gap-3">
-          <H3 className="text-xl">Buscar Manifesto:</H3>
-          <View
-            style={{
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.25,
-              shadowRadius: 4,
-              elevation: 4,
-            }}
-            className="h-14 w-full rounded-xl bg-grayscale-0"
-          >
-            <TextInput
-              className="flex-1 px-7"
-              placeholder="Digite o número do manifesto"
-              value={searchTerm}
-              onChangeText={setSearchTerm}
-            />
-          </View>
-        </View> */}
-
                 <View className="mt-8">
-                  <Button className="w-1/2">
+                  <Button
+                    className="w-1/2"
+                    onPress={() => {
+                      if (selectStatus) setStatusFilter(selectStatus.value);
+                    }}
+                  >
                     <H3 className="text-base font-bold text-white">
                       Pesquisar
                     </H3>
@@ -315,7 +340,9 @@ export function ManifestScreen() {
                     <View className="flex-row items-center gap-3">
                       <Button
                         className="h-[30px] w-[80px] items-center justify-center rounded-lg"
-                        onPress={() => handleNavigateToScreen("entrega")}
+                        onPress={() =>
+                          handleNavigateToScreen("entrega", item.id_manifesto)
+                        }
                         style={{ backgroundColor: "#439943" }}
                       >
                         <P className="text-xs text-white">Baixar</P>
@@ -328,7 +355,9 @@ export function ManifestScreen() {
                     <View className="flex-row items-center gap-3">
                       <Button
                         className="h-[30px] w-[80px] items-center justify-center rounded-lg"
-                        onPress={() => handleNavigateToScreen("coleta")}
+                        onPress={() =>
+                          handleNavigateToScreen("coleta", item.id_manifesto)
+                        }
                         style={{ backgroundColor: "#ED9C2A" }}
                       >
                         <P className="text-xs text-white">Baixar</P>
@@ -341,7 +370,9 @@ export function ManifestScreen() {
                     <View className="flex-row items-center gap-3">
                       <Button
                         className="h-[30px] w-[80px] items-center justify-center rounded-lg"
-                        onPress={() => handleNavigateToScreen("despacho")}
+                        onPress={() =>
+                          handleNavigateToScreen("despacho", item.id_manifesto)
+                        }
                         style={{ backgroundColor: "#2E6EA5" }}
                       >
                         <P className="text-xs text-white">Baixar</P>
@@ -354,7 +385,9 @@ export function ManifestScreen() {
                     <View className="flex-row items-center gap-3">
                       <Button
                         className="h-[30px] w-[80px] items-center justify-center rounded-lg"
-                        onPress={() => handleNavigateToScreen("retirada")}
+                        onPress={() =>
+                          handleNavigateToScreen("retirada", item.id_manifesto)
+                        }
                         style={{ backgroundColor: "#28A4C9" }}
                       >
                         <P className="text-xs text-white">Baixar</P>
@@ -367,7 +400,12 @@ export function ManifestScreen() {
                     <View className="flex-row items-center gap-3">
                       <Button
                         className="h-[30px] w-[80px] items-center justify-center rounded-lg"
-                        onPress={() => handleNavigateToScreen("transferencia")}
+                        onPress={() =>
+                          handleNavigateToScreen(
+                            "transferencia",
+                            item.id_manifesto,
+                          )
+                        }
                         style={{ backgroundColor: "#EEEEEE" }}
                       >
                         <P className="text-xs text-black">Baixar</P>
@@ -407,12 +445,17 @@ export function ManifestScreen() {
         ref={bottomSheetPicker}
         selected={selectStatus}
         data={[
-          { name: "Ativo", value: "Ativo" },
-          { name: "Coletado", value: "Coletado" },
-          { name: "Cancelado", value: "Cancelado" },
+          { name: "...", value: "" },
+          { name: "EM ABERTO", value: "1" },
+          { name: "EM TRANSITO", value: "4" },
+          { name: "FINALIZADO", value: "8" },
         ]}
         onChangeValue={(value) => {
           setSelectStatus(value);
+          setStatusFilter(value.value);
+          if (selectedManifestId) {
+            handleNavigateToScreen(value.name, selectedManifestId);
+          }
         }}
       />
 
@@ -452,9 +495,9 @@ export function ManifestScreen() {
                       return (
                         <View key={key} className="mt-4">
                           <Button
-                            onPress={() =>
-                              handleNavigateToScreen(value as string)
-                            }
+                            onPress={() => {
+                              setModalVisible(false);
+                            }}
                             className="bg-blue-900"
                           >
                             <P className="text-white">Ir para {value}</P>

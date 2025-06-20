@@ -1,6 +1,6 @@
 import { Button } from "@components/Button";
 import { ContainerAppCpX } from "@components/ContainerAppCpX";
-import { H2, H3, H4, P } from "@components/Typography";
+import { H4, P } from "@components/Typography";
 import {
   ActivityIndicator,
   FlatList,
@@ -9,7 +9,6 @@ import {
   TouchableOpacity,
   View,
   TextInput,
-  Switch,
 } from "react-native";
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import { getInfoEntrega, updateOcorrenciaEntrega } from "@/service/services";
@@ -29,7 +28,7 @@ type DeliveryScreenRouteProp = RouteProp<
 
 export function DeliveryScreen() {
   const route = useRoute<DeliveryScreenRouteProp>();
-  const manifestoId = route.params?.manifestoId || "1"; // Default to "1" if not provided
+  const manifestoId = route.params?.manifestoId;
   const [entregas, setEntregas] = useState<deliveryDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);

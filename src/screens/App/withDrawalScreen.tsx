@@ -29,7 +29,7 @@ type WithdrawalScreenRouteProp = RouteProp<
 
 export function WithDrawalScreen() {
   const route = useRoute<WithdrawalScreenRouteProp>();
-  const manifestoId = route.params?.manifestoId || "1"; // Default to "1" if not provided
+  const manifestoId = route.params?.manifestoId;
   const [retiradas, setRetiradas] = useState<retiradaDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);

@@ -30,7 +30,7 @@ type DispatchScreenRouteProp = RouteProp<
 
 export function DispatchScreen() {
   const route = useRoute<DispatchScreenRouteProp>();
-  const manifestoId = route.params?.manifestoId || "1"; // Default to "1" if not provided
+  const manifestoId = route.params?.manifestoId;
   const [entregas, setEntregas] = useState<despachoDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -283,7 +283,7 @@ export function DispatchScreen() {
 
                     <View className="flex-row items-center gap-3">
                       <P className="text-sm font-bold">
-                        Minuta Despacho - {item.minutaDespacho}
+                        Minuta - {item.minutaDespacho}
                       </P>
                     </View>
 
@@ -348,7 +348,7 @@ export function DispatchScreen() {
             <View>
               <H3 className="text-white">Frete Número: {selectedItem.frete}</H3>
               <P className="text-white">
-                Minuta Despacho: {selectedItem.minutaDespacho}
+                Minuta: {selectedItem.minutaDespacho}
               </P>
               <P className="text-white">CTE: {selectedItem.CTE}</P>
               <P className="text-white">Destino: {selectedItem.destino}</P>

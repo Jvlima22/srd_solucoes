@@ -27,7 +27,7 @@ type CollectionScreenRouteProp = RouteProp<
 
 export function CollectionScreen() {
   const route = useRoute<CollectionScreenRouteProp>();
-  const manifestoId = route.params?.manifestoId || "1"; // Default to "1" if not provided
+  const manifestoId = route.params?.manifestoId;
   const [entregas, setEntregas] = useState<coletaDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
