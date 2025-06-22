@@ -8,23 +8,16 @@ import {
   ScrollView,
   TextInput,
   View,
-  TouchableOpacity,
 } from "react-native";
 
 import React, { useEffect, useRef, useState } from "react";
-import {
-  getInfoDespacho,
-  updateOcorrenciaDespacho,
-  getDetalhesDespacho,
-} from "@/service/services";
+import { getInfoDespacho, updateOcorrenciaDespacho } from "@/service/services";
 import { CustomModal } from "@/components/CustomModal";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import MaskInput from "react-native-mask-input";
 import { useRoute, RouteProp } from "@react-navigation/native";
 
-import { Check, Trash2 } from "lucide-react-native";
-import type { DetalhesDespachoDTO } from "../../@types/detalhesDespachoDTO";
-import { DetailsBottomSheet } from "@/components/DetailsBottomSheet";
+import { Check } from "lucide-react-native";
 
 type DispatchScreenParams = {
   manifestoId: string;
@@ -49,14 +42,6 @@ export function DispatchScreen() {
   const [loteMinutas, setLoteMinutas] = useState<string[]>([]);
   const [loteFretes, setLoteFretes] = useState<string[]>([]);
   const [isLote, setIsLote] = useState(false);
-
-  // Estados para o BottomSheet de detalhes
-  const [isDetailsSheetOpen, setIsDetailsSheetOpen] = useState(false);
-  const detailsBottomSheetRef = useRef<BottomSheet>(null);
-  const [detalhesDespacho, setDetalhesDespacho] =
-    useState<DetalhesDespachoDTO | null>(null);
-  const [detalhesLoading, setDetalhesLoading] = useState(false);
-  const [detailsSheetIndex, setDetailsSheetIndex] = useState(-1);
 
   // Estados para o lançamento de ocorrência
   const bottomSheetRef = useRef<BottomSheet>(null);
@@ -161,24 +146,6 @@ export function DispatchScreen() {
     }
   };
 
-  const handleOpenDetalhes = async (item: despachoDTO) => {
-    console.log("Abrindo detalhes", item);
-    setSelectedItem(item);
-    setIsDetailsSheetOpen(true);
-    setDetailsSheetIndex(1);
-    setDetalhesLoading(true);
-    setDetalhesDespacho(null);
-    try {
-      const response = await getDetalhesDespacho(String(item.minutaDespacho));
-      setDetalhesDespacho(response.data);
-    } catch (error) {
-      alert("Não foi possível carregar os detalhes do despacho.");
-      setDetailsSheetIndex(-1);
-    } finally {
-      setDetalhesLoading(false);
-    }
-  };
-
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -216,13 +183,6 @@ export function DispatchScreen() {
       </ContainerAppCpX>
     );
   }
-
-  console.log(
-    "isDetailsSheetOpen:",
-    isDetailsSheetOpen,
-    "detailsSheetIndex:",
-    detailsSheetIndex,
-  );
 
   return (
     <ContainerAppCpX>
@@ -354,7 +314,10 @@ export function DispatchScreen() {
                     <Button
                       className="w-1/3"
                       size="icon"
-                      onPress={() => handleOpenDetalhes(item)}
+                      onPress={() => {
+                        setSelectedItem(item);
+                        setModalVisible(true);
+                      }}
                     >
                       <P className="text-base font-bold text-white">Detalhes</P>
                     </Button>
@@ -377,73 +340,24 @@ export function DispatchScreen() {
           }}
         />
 
-        <DetailsBottomSheet
-          isOpen={isDetailsSheetOpen}
-          onClose={() => {
-            setIsDetailsSheetOpen(false);
-            setDetalhesDespacho(null);
-            setDetailsSheetIndex(-1);
-          }}
-          bottomSheetRef={detailsBottomSheetRef}
-          title="Detalhes do despacho"
-          primaryFields={[
-            {
-              label: "Minuta de Despacho",
-              value:
-                detalhesDespacho?.numero_minuta ||
-                selectedItem?.minutaDespacho ||
-                "",
-            },
-            {
-              label: "Frete",
-              value: detalhesDespacho?.frete || selectedItem?.frete || "",
-            },
-          ]}
-          columns={[
-            { header: "Nº", accessor: "numero", flex: 0.7 },
-            { header: "Ocorrência", accessor: "ocorrencia", flex: 2 },
-            {
-              header: "Data",
-              accessor: "data",
-              flex: 1.8,
-              render: (item) => (
-                <P style={{ textAlign: "center", color: "#222" }}>
-                  {item.data ? item.data.split("-").reverse().join("/") : ""}
-                </P>
-              ),
-            },
-            {
-              header: "Hora",
-              accessor: "hora",
-              flex: 1.1,
-              render: (item) => (
-                <P style={{ textAlign: "center", color: "#222" }}>
-                  {item.hora ? item.hora.substring(0, 5) : "N/A"}
-                </P>
-              ),
-            },
-            {
-              header: "Excluir",
-              accessor: "actions",
-              flex: 1,
-              render: () => (
-                <TouchableOpacity>
-                  <Trash2 width={18} height={18} color="#ff0000" />
-                </TouchableOpacity>
-              ),
-            },
-          ]}
-          data={
-            Array.isArray(detalhesDespacho)
-              ? detalhesDespacho
-              : detalhesDespacho
-                ? [detalhesDespacho]
-                : []
-          }
-          isLoading={detalhesLoading}
-          sheetIndex={detailsSheetIndex}
-          setSheetIndex={setDetailsSheetIndex}
-        />
+        <CustomModal
+          visible={modalVisible}
+          onClose={() => setModalVisible(false)}
+        >
+          {selectedItem && (
+            <View>
+              <H3 className="text-white">Frete Número: {selectedItem.frete}</H3>
+              <P className="text-white">
+                Minuta: {selectedItem.minutaDespacho}
+              </P>
+              <P className="text-white">CTE: {selectedItem.CTE}</P>
+              <P className="text-white">Destino: {selectedItem.destino}</P>
+              <P className="text-white">Cidade: {selectedItem.cidade}</P>
+              <P className="text-white">UF: {selectedItem.uf}</P>
+              <P className="text-white">Status: {selectedItem.status}</P>
+            </View>
+          )}
+        </CustomModal>
 
         {isBottomSheetOpen && (
           <BottomSheet

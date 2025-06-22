@@ -246,29 +246,6 @@ const updateOcorrenciaRetirada = async (
   return await api.put(`/ocorrencia/retirada/${retiradaId}`, data);
 };
 
-const updateOcorrenciaTransferencia = async (
-  transferenciaId: number,
-  data: {
-    data_ocorrencia: string;
-    hora_ocorrencia: string;
-    observacao: string;
-    ocorrencia: string;
-  },
-): Promise<AxiosResponse> => {
-  if (DEV) {
-    console.log("Mocking API response");
-    const response = {
-      data: { message: "Ocorrência atualizada com sucesso" },
-      status: 200,
-      statusText: "OK",
-    };
-    await new Promise((resolve) => setTimeout(resolve, timeout));
-    return response as AxiosResponse;
-  }
-
-  return await api.put(`/ocorrencia/transferencia/${transferenciaId}`, data);
-};
-
 export async function updateOcorrenciaDespacho(minutaId: number, payload: any) {
   try {
     const response = await api.put(`/ocorrencia/despacho/${minutaId}`, payload);
@@ -277,58 +254,6 @@ export async function updateOcorrenciaDespacho(minutaId: number, payload: any) {
     throw error;
   }
 }
-
-export const getDetalhesEntrega = async (freteId: string) => {
-  try {
-    const response = await api.get(`/detalhes/entrega/${freteId}`);
-    return response;
-  } catch (error) {
-    console.error("Erro ao buscar detalhes da entrega:", error);
-    throw error;
-  }
-};
-
-export const getDetalhesColeta = async (coletaId: string) => {
-  try {
-    const response = await api.get(`/detalhes/coleta/${coletaId}`);
-    return response;
-  } catch (error) {
-    console.error("Erro ao buscar detalhes da coleta:", error);
-    throw error;
-  }
-};
-
-export const getDetalhesRetirada = async (retiradaId: string) => {
-  try {
-    const response = await api.get(`/detalhes/retirada/${retiradaId}`);
-    return response;
-  } catch (error) {
-    console.error("Erro ao buscar detalhes da retirada:", error);
-    throw error;
-  }
-};
-
-export const getDetalhesTransferencia = async (transferenciaId: string) => {
-  try {
-    const response = await api.get(
-      `/detalhes/transferencia/${transferenciaId}`,
-    );
-    return response;
-  } catch (error) {
-    console.error("Erro ao buscar detalhes da transferência:", error);
-    throw error;
-  }
-};
-
-export const getDetalhesDespacho = async (despachoId: string) => {
-  try {
-    const response = await api.get(`/detalhes/despacho/${despachoId}`);
-    return response;
-  } catch (error) {
-    console.error("Erro ao buscar detalhes do despacho:", error);
-    throw error;
-  }
-};
 
 export {
   auth_login,
@@ -341,5 +266,4 @@ export {
   updateOcorrenciaEntrega,
   updateOcorrenciaColeta,
   updateOcorrenciaRetirada,
-  updateOcorrenciaTransferencia,
 };

@@ -9,20 +9,14 @@ import {
   ScrollView,
   TextInput,
   View,
-  TouchableOpacity,
 } from "react-native";
 
-import {
-  getInfoRetirada,
-  updateOcorrenciaRetirada,
-  getDetalhesRetirada,
-} from "@/service/services";
+import { getInfoRetirada, updateOcorrenciaRetirada } from "@/service/services";
 import { CustomModal } from "@/components/CustomModal";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import MaskInput from "react-native-mask-input";
 import { useRoute, RouteProp } from "@react-navigation/native";
-import { Check, Trash2 } from "lucide-react-native";
-import { DetailsBottomSheet } from "@/components/DetailsBottomSheet";
+import { Check } from "lucide-react-native";
 
 type WithdrawalScreenParams = {
   manifestoId: string;
@@ -57,13 +51,6 @@ export function WithDrawalScreen() {
   const [loteIds, setLoteIds] = useState<string[]>([]);
   const [loteFretes, setLoteFretes] = useState<string[]>([]);
   const [isLote, setIsLote] = useState(false);
-
-  // Estados para o BottomSheet de detalhes
-  const [isDetailsSheetOpen, setIsDetailsSheetOpen] = useState(false);
-  const detailsBottomSheetRef = useRef<BottomSheet>(null);
-  const [detalhesRetirada, setDetalhesRetirada] = useState<any[] | null>(null);
-  const [detalhesLoading, setDetalhesLoading] = useState(false);
-  const [detailsSheetIndex, setDetailsSheetIndex] = useState(-1);
 
   const ocorrencias = [
     "Retirada cancelada",
@@ -186,24 +173,6 @@ export function WithDrawalScreen() {
     }
   };
 
-  const handleOpenDetalhes = async (item: retiradaDTO) => {
-    console.log("Abrindo detalhes", item);
-    setSelectedItem(item);
-    setIsDetailsSheetOpen(true);
-    setDetailsSheetIndex(1);
-    setDetalhesLoading(true);
-    setDetalhesRetirada(null);
-    try {
-      const response = await getDetalhesRetirada(String(item.retirada));
-      setDetalhesRetirada(response.data);
-    } catch (error) {
-      alert("Não foi possível carregar os detalhes da retirada.");
-      setDetailsSheetIndex(-1);
-    } finally {
-      setDetalhesLoading(false);
-    }
-  };
-
   useEffect(() => {
     fetchData();
   }, [manifestoId]);
@@ -217,13 +186,6 @@ export function WithDrawalScreen() {
       </ContainerAppCpX>
     );
   }
-
-  console.log(
-    "isDetailsSheetOpen:",
-    isDetailsSheetOpen,
-    "detailsSheetIndex:",
-    detailsSheetIndex,
-  );
 
   return (
     <ContainerAppCpX>
@@ -352,7 +314,10 @@ export function WithDrawalScreen() {
 
                   <View className="mt-8 items-center justify-center">
                     <Button
-                      onPress={() => handleOpenDetalhes(item)}
+                      onPress={() => {
+                        setSelectedItem(item);
+                        setModalVisible(true);
+                      }}
                       className="w-1/3"
                       size="icon"
                     >
@@ -377,77 +342,22 @@ export function WithDrawalScreen() {
           }}
         />
 
-        <DetailsBottomSheet
-          isOpen={isDetailsSheetOpen}
-          onClose={() => {
-            setIsDetailsSheetOpen(false);
-            setDetalhesRetirada(null);
-            setDetailsSheetIndex(-1);
-          }}
-          bottomSheetRef={detailsBottomSheetRef}
-          title="Detalhes da retirada"
-          primaryFields={[
-            {
-              label: "Romaneio de Retirada",
-              value:
-                (detalhesRetirada &&
-                  detalhesRetirada[0]?.["Romaneio de retirada"]) ||
-                selectedItem?.retirada ||
-                "",
-            },
-            {
-              label: "Frete",
-              value:
-                (detalhesRetirada && detalhesRetirada[0]?.frete) ||
-                selectedItem?.frete ||
-                "",
-            },
-          ]}
-          columns={[
-            { header: "Doc N°", accessor: "documento", flex: 1 },
-            { header: "Ocorrência", accessor: "ocorrencia", flex: 2 },
-            {
-              header: "Data",
-              accessor: "data",
-              flex: 1.5,
-              render: (item) => (
-                <P style={{ textAlign: "center", color: "#222" }}>
-                  {item.data ? item.data : "N/A"}
-                </P>
-              ),
-            },
-            {
-              header: "Hora",
-              accessor: "hora",
-              flex: 1,
-              render: (item) => (
-                <P style={{ textAlign: "center", color: "#222" }}>
-                  {item.hora ? item.hora.substring(0, 5) : "N/A"}
-                </P>
-              ),
-            },
-            {
-              header: "Excluir",
-              accessor: "actions",
-              flex: 1,
-              render: () => (
-                <TouchableOpacity>
-                  <Trash2 width={18} height={18} color="#ff0000" />
-                </TouchableOpacity>
-              ),
-            },
-          ]}
-          data={
-            Array.isArray(detalhesRetirada)
-              ? detalhesRetirada
-              : detalhesRetirada
-                ? [detalhesRetirada]
-                : []
-          }
-          isLoading={detalhesLoading}
-          sheetIndex={detailsSheetIndex}
-          setSheetIndex={setDetailsSheetIndex}
-        />
+        <CustomModal
+          visible={modalVisible}
+          onClose={() => setModalVisible(false)}
+        >
+          {selectedItem && (
+            <View>
+              <H1 className="text-white">Frete Número: {selectedItem.frete}</H1>
+              <P className="text-white">Retirada: {selectedItem.retirada}</P>
+              <P className="text-white">CTE: {selectedItem.cte}</P>
+              <P className="text-white">Destino: {selectedItem.destino}</P>
+              <P className="text-white">Cidade: {selectedItem.cidade}</P>
+              <P className="text-white">UF: {selectedItem.uf}</P>
+              <P className="text-white">Status: {selectedItem.status}</P>
+            </View>
+          )}
+        </CustomModal>
 
         {isBottomSheetOpen && (
           <BottomSheet
