@@ -11,11 +11,16 @@ import {
   TextInput,
 } from "react-native";
 import React, { useEffect, useState, useMemo, useRef } from "react";
-import { getInfoEntrega, updateOcorrenciaEntrega } from "@/service/services";
+import {
+  getInfoEntrega,
+  getDetalhesEntrega,
+  updateOcorrenciaEntrega,
+} from "@/service/services";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import MaskInput from "react-native-mask-input";
 import { useRoute, RouteProp } from "@react-navigation/native";
-import { Check } from "lucide-react-native";
+import { Check, Trash2 } from "lucide-react-native";
+import { DetailsBottomSheet } from "@/components/DetailsBottomSheet";
 
 type DeliveryScreenParams = {
   manifestoId: string;
@@ -32,7 +37,6 @@ export function DeliveryScreen() {
   const [entregas, setEntregas] = useState<deliveryDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState<deliveryDTO | null>(null);
   const [ocorrenciaData, setOcorrenciaData] = useState<{
     id: number;
@@ -41,10 +45,13 @@ export function DeliveryScreen() {
     hora_ocorrencia: string;
     observacao: string;
   } | null>(null);
+  const [detalhesEntrega, setDetalhesEntrega] =
+    useState<DetalhesEntregaDTO | null>(null);
+  const [detalhesLoading, setDetalhesLoading] = useState(false);
 
   // Bottom Sheet
   const bottomSheetRef = useRef<BottomSheet>(null);
-  const snapPoints = useMemo(() => ["25%", "50%", "90%"], []);
+  const snapPoints = useMemo(() => ["25%", "50%", "100%"], []);
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
   const [documento, setDocumento] = useState("");
   const [frete, setFrete] = useState("");
@@ -60,6 +67,11 @@ export function DeliveryScreen() {
   const [loteDocs, setLoteDocs] = useState<string[]>([]);
   const [loteFretes, setLoteFretes] = useState<string[]>([]);
   const [isLote, setIsLote] = useState(false);
+
+  // Estados para o BottomSheet de detalhes
+  const [isDetailsSheetOpen, setIsDetailsSheetOpen] = useState(false);
+  const detailsBottomSheetRef = useRef<BottomSheet>(null);
+  const [detailsSheetIndex, setDetailsSheetIndex] = useState(-1);
 
   const ocorrencias = [
     "Aguardado no local",
@@ -147,6 +159,24 @@ export function DeliveryScreen() {
     }
   };
 
+  const handleOpenDetalhes = async (item: deliveryDTO) => {
+    console.log("Abrindo detalhes", item);
+    setSelectedItem(item);
+    setIsDetailsSheetOpen(true);
+    setDetailsSheetIndex(1);
+    setDetalhesLoading(true);
+    setDetalhesEntrega(null);
+    try {
+      const response = await getDetalhesEntrega(String(item.frete));
+      setDetalhesEntrega(response.data);
+    } catch (error) {
+      alert("Não foi possível carregar os detalhes da entrega.");
+      setDetailsSheetIndex(-1);
+    } finally {
+      setDetalhesLoading(false);
+    }
+  };
+
   // Função para selecionar/desmarcar todos
   const handleSelectAll = () => {
     if (selectAll) {
@@ -199,6 +229,13 @@ export function DeliveryScreen() {
       </ContainerAppCpX>
     );
   }
+
+  console.log(
+    "isDetailsSheetOpen:",
+    isDetailsSheetOpen,
+    "detailsSheetIndex:",
+    detailsSheetIndex,
+  );
 
   return (
     <ContainerAppCpX>
@@ -334,10 +371,7 @@ export function DeliveryScreen() {
                     <Button
                       size="icon"
                       className="w-1/3"
-                      onPress={() => {
-                        setSelectedItem(item);
-                        setModalVisible(true);
-                      }}
+                      onPress={() => handleOpenDetalhes(item)}
                     >
                       <P className="text-base font-bold text-white">Detalhes</P>
                     </Button>
@@ -362,43 +396,56 @@ export function DeliveryScreen() {
           }}
         />
 
-        <Modal
-          animationType="slide"
-          transparent={true}
-          visible={modalVisible}
-          onRequestClose={() => setModalVisible(false)}
-        >
-          <View className="flex-1 items-center justify-center bg-black/60">
-            <View className="w-11/12 rounded-lg bg-blue-900 p-5">
-              <Pressable
-                className="absolute right-3 top-3 h-8 w-8 items-center justify-center rounded-full bg-white"
-                onPress={() => {
-                  setModalVisible(false);
-                  setSelectedItem(null);
-                }}
-              >
-                <P className="text-black">X</P>
-              </Pressable>
-
-              {selectedItem && (
-                <View>
-                  <H4 className="text-white">Detalhes da Ocorrência</H4>
-                  <P className="mt-3 text-white">Frete: {selectedItem.frete}</P>
-                  <P className="text-white">CTE: {selectedItem.cte}</P>
-                  <P className="text-white">
-                    Destino: {selectedItem.destinatario}
-                  </P>
-                  <P className="text-white">Cidade: {selectedItem.cidade}</P>
-                  <P className="text-white">UF: {selectedItem.uf}</P>
-                  <P className="text-white">Status: {selectedItem.status}</P>
-                  <P className="text-white">
-                    Ocorrência: {selectedItem.ocorrencia}
-                  </P>
-                </View>
-              )}
-            </View>
-          </View>
-        </Modal>
+        <DetailsBottomSheet
+          isOpen={isDetailsSheetOpen}
+          onClose={() => {
+            setIsDetailsSheetOpen(false);
+            setDetalhesEntrega(null);
+            setDetailsSheetIndex(-1);
+          }}
+          bottomSheetRef={detailsBottomSheetRef}
+          title="Detalhes da entrega"
+          primaryFields={[
+            {
+              label: "Documento / NF",
+              value:
+                detalhesEntrega?.documento || selectedItem?.documento || "",
+            },
+            {
+              label: "Frete",
+              value: detalhesEntrega?.frete || selectedItem?.frete || "",
+            },
+          ]}
+          columns={[
+            { header: "Nº", accessor: "numero", flex: 0.7 },
+            { header: "Ocorrência", accessor: "ocorrencia", flex: 2 },
+            {
+              header: "Data",
+              accessor: "data",
+              flex: 1.8,
+              render: (item) => (
+                <P style={{ textAlign: "center", color: "#222" }}>
+                  {item.data ? item.data.split("-").reverse().join("/") : ""}
+                </P>
+              ),
+            },
+            { header: "Hora", accessor: "hora", flex: 1.1 },
+            {
+              header: "Excluir",
+              accessor: "actions",
+              flex: 1,
+              render: () => (
+                <TouchableOpacity>
+                  <Trash2 width={18} height={18} color="#ff0000" />
+                </TouchableOpacity>
+              ),
+            },
+          ]}
+          data={detalhesEntrega?.ocorrencias || []}
+          isLoading={detalhesLoading}
+          sheetIndex={detailsSheetIndex}
+          setSheetIndex={setDetailsSheetIndex}
+        />
 
         <Modal
           animationType="slide"

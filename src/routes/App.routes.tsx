@@ -1,7 +1,23 @@
 import React, { useState } from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { View, Pressable, Text, StyleSheet, Platform } from "react-native";
-import { AlignJustify } from "lucide-react-native";
+import {
+  View,
+  Pressable,
+  Text,
+  StyleSheet,
+  Platform,
+  Alert,
+} from "react-native";
+import {
+  AlignJustify,
+  FileText,
+  Truck,
+  Package,
+  Send,
+  Archive,
+  Repeat,
+  LogOut,
+} from "lucide-react-native";
 
 import { ManifestScreen } from "@screens/App/manifestScreen";
 import { CollectionScreen } from "@screens/App/collectionScreen";
@@ -11,6 +27,7 @@ import { TransferScreen } from "@screens/App/transferScreen";
 import { WithDrawalScreen } from "@screens/App/withDrawalScreen";
 import { useNavigation } from "@react-navigation/native";
 import { useAuth } from "@hooks/useAuth";
+import type { RootStackParamList } from "../@types/routes";
 
 const { Navigator, Screen } = createNativeStackNavigator<RootStackParamList>();
 
@@ -25,13 +42,23 @@ export function AppRoutes() {
 
   const navigateTo = (screen: keyof RootStackParamList) => {
     setMenuVisible(false);
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+
     // @ts-ignore
     navigation.navigate(screen);
   };
 
   const handleSignOut = () => {
-    signOut();
+    Alert.alert("Confirmação", "Tem certeza que deseja sair?", [
+      {
+        text: "Cancelar",
+        style: "cancel",
+      },
+      {
+        text: "Sair",
+        style: "destructive",
+        onPress: () => signOut(),
+      },
+    ]);
   };
 
   return (
@@ -58,7 +85,7 @@ export function AppRoutes() {
           name="AppScreen"
           component={ManifestScreen}
           options={{
-            headerTitle: " Manifesto",
+            headerTitle: " Manifestos",
           }}
         />
         <Screen
@@ -105,40 +132,61 @@ export function AppRoutes() {
             onPress={() => navigateTo("AppScreen")}
             style={styles.menuItem}
           >
-            <Text style={styles.menuText}>Manifesto</Text>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <FileText size={18} color="#fff" style={{ marginRight: 8 }} />
+              <Text style={styles.menuText}>Manifestos</Text>
+            </View>
           </Pressable>
           <Pressable
             onPress={() => navigateTo("DeliveryScreen")}
             style={styles.menuItem}
           >
-            <Text style={styles.menuText}>Entrega</Text>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Truck size={18} color="#fff" style={{ marginRight: 8 }} />
+              <Text style={styles.menuText}>Entrega</Text>
+            </View>
           </Pressable>
           <Pressable
             onPress={() => navigateTo("CollectionScreen")}
             style={styles.menuItem}
           >
-            <Text style={styles.menuText}>Coleta</Text>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Package size={18} color="#fff" style={{ marginRight: 8 }} />
+              <Text style={styles.menuText}>Coleta</Text>
+            </View>
           </Pressable>
           <Pressable
             onPress={() => navigateTo("DispatchScreen")}
             style={styles.menuItem}
           >
-            <Text style={styles.menuText}>Despacho</Text>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Send size={18} color="#fff" style={{ marginRight: 8 }} />
+              <Text style={styles.menuText}>Despacho</Text>
+            </View>
           </Pressable>
           <Pressable
             onPress={() => navigateTo("WithDrawalScreen")}
             style={styles.menuItem}
           >
-            <Text style={styles.menuText}>Retirada</Text>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Archive size={18} color="#fff" style={{ marginRight: 8 }} />
+              <Text style={styles.menuText}>Retirada</Text>
+            </View>
           </Pressable>
           <Pressable
             onPress={() => navigateTo("TransferScreen")}
             style={styles.menuItem}
           >
-            <Text style={styles.menuText}>Transferência</Text>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Repeat size={18} color="#fff" style={{ marginRight: 8 }} />
+              <Text style={styles.menuText}>Transferência</Text>
+            </View>
           </Pressable>
           <Pressable onPress={handleSignOut} style={styles.menuItem}>
-            <Text style={styles.menuText}>Sair</Text>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <LogOut size={18} color="#fff" style={{ marginRight: 8 }} />
+              <Text style={styles.menuText}>Sair</Text>
+            </View>
           </Pressable>
         </View>
       )}

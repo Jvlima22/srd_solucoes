@@ -1,6 +1,6 @@
 import { Button } from "@components/Button";
 import { ContainerAppCpX } from "@components/ContainerAppCpX";
-import { H1, H4, P } from "@components/Typography";
+import { H4, P } from "@components/Typography";
 import {
   ActivityIndicator,
   FlatList,
@@ -8,13 +8,19 @@ import {
   ScrollView,
   TextInput,
   View,
+  TouchableOpacity,
 } from "react-native";
 import React, { useEffect, useRef, useState } from "react";
-import { getInfoColeta, updateOcorrenciaColeta } from "@/service/services";
-import { CustomModal } from "@/components/CustomModal";
+import {
+  getInfoColeta,
+  updateOcorrenciaColeta,
+  getDetalhesColeta,
+} from "@/service/services";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import MaskInput from "react-native-mask-input";
 import { useRoute, RouteProp } from "@react-navigation/native";
+import { Trash2 } from "lucide-react-native";
+import { DetailsBottomSheet } from "@/components/DetailsBottomSheet";
 
 type CollectionScreenParams = {
   manifestoId: string;
@@ -25,13 +31,20 @@ type CollectionScreenRouteProp = RouteProp<
   "params"
 >;
 
+interface DetalhesColetaDTO {
+  coleta: number;
+  documento: string | null;
+  ocorrencia: string;
+  dataOcorrencia: string | null;
+  horaOcorrencia: string | null;
+}
+
 export function CollectionScreen() {
   const route = useRoute<CollectionScreenRouteProp>();
   const manifestoId = route.params?.manifestoId;
   const [entregas, setEntregas] = useState<coletaDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState<coletaDTO | null>(null);
 
   // Estados para o lançamento de ocorrência
@@ -47,11 +60,37 @@ export function CollectionScreen() {
   const [documento, setDocumento] = useState("");
   const [arquivo, setArquivo] = useState<string | null>(null);
 
+  // Estados para o BottomSheet de detalhes
+  const [isDetailsSheetOpen, setIsDetailsSheetOpen] = useState(false);
+  const detailsBottomSheetRef = useRef<BottomSheet>(null);
+  const [detalhesColeta, setDetalhesColeta] = useState<
+    DetalhesColetaDTO[] | null
+  >(null);
+  const [detalhesLoading, setDetalhesLoading] = useState(false);
+  const [detailsSheetIndex, setDetailsSheetIndex] = useState(-1);
+
   const ocorrencias = [
     "coleta cancelada",
     "Filial",
     "Coleta realizado normalmente",
   ];
+
+  // Função para formatar a hora para HH:MM
+  const formatarHora = (hora: string | null): string => {
+    if (!hora) return "N/A";
+
+    // Se a hora já está no formato HH:MM, retorna como está
+    if (hora.length === 5 && hora.includes(":")) {
+      return hora;
+    }
+
+    // Se a hora está no formato HH:MM:SS, remove os segundos
+    if (hora.length === 8 && hora.includes(":")) {
+      return hora.substring(0, 5);
+    }
+
+    return hora;
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -140,6 +179,24 @@ export function CollectionScreen() {
     }
   };
 
+  const handleOpenDetalhes = async (item: coletaDTO) => {
+    console.log("Abrindo detalhes", item);
+    setSelectedItem(item);
+    setIsDetailsSheetOpen(true);
+    setDetailsSheetIndex(1);
+    setDetalhesLoading(true);
+    setDetalhesColeta(null);
+    try {
+      const response = await getDetalhesColeta(String(item.coleta));
+      setDetalhesColeta(response.data);
+    } catch (error) {
+      alert("Não foi possível carregar os detalhes da coleta.");
+      setDetailsSheetIndex(-1);
+    } finally {
+      setDetalhesLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -153,6 +210,13 @@ export function CollectionScreen() {
       </ContainerAppCpX>
     );
   }
+
+  console.log(
+    "isDetailsSheetOpen:",
+    isDetailsSheetOpen,
+    "detailsSheetIndex:",
+    detailsSheetIndex,
+  );
 
   return (
     <ContainerAppCpX>
@@ -221,10 +285,7 @@ export function CollectionScreen() {
                   <Button
                     size="icon"
                     className="w-1/3"
-                    onPress={() => {
-                      setSelectedItem(item);
-                      setModalVisible(true);
-                    }}
+                    onPress={() => handleOpenDetalhes(item)}
                   >
                     <P className="text-base font-bold text-white">Detalhes</P>
                   </Button>
@@ -245,28 +306,6 @@ export function CollectionScreen() {
             </View>
           )}
         />
-
-        <CustomModal
-          visible={modalVisible}
-          onClose={() => setModalVisible(false)}
-        >
-          {selectedItem && (
-            <View>
-              <H1 className="text-white">
-                Coleta Número: {selectedItem.coleta}
-              </H1>
-              <P className="text-white">
-                Total Documentos: {selectedItem.totalDocumento}
-              </P>
-              <P className="text-white">Volume: {selectedItem.volume}</P>
-              <P className="text-white">Peso: {selectedItem.peso} kg</P>
-              <P className="text-white">Local: {selectedItem.destinatario}</P>
-              <P className="text-white">Cidade: {selectedItem.cidade}</P>
-              <P className="text-white">UF: {selectedItem.uf}</P>
-              <P className="text-white">Status: {selectedItem.status}</P>
-            </View>
-          )}
-        </CustomModal>
 
         {isBottomSheetOpen && (
           <BottomSheet
@@ -427,6 +466,73 @@ export function CollectionScreen() {
             </BottomSheetView>
           </BottomSheet>
         )}
+
+        <DetailsBottomSheet
+          isOpen={isDetailsSheetOpen}
+          onClose={() => {
+            setIsDetailsSheetOpen(false);
+            setDetalhesColeta(null);
+            setDetailsSheetIndex(-1);
+          }}
+          bottomSheetRef={detailsBottomSheetRef}
+          title="Detalhes da coleta"
+          primaryFields={[
+            {
+              label: "Número da Coleta",
+              value: selectedItem?.coleta || "",
+            },
+            {
+              label: "Documento",
+              value: selectedItem?.totalDocumento || "",
+            },
+          ]}
+          columns={[
+            { header: "Doc N°", accessor: "documento", flex: 1 },
+            { header: "Ocorrência", accessor: "ocorrencia", flex: 2 },
+            {
+              header: "Data",
+              accessor: "data",
+              flex: 1.5,
+              render: (item) => (
+                <P style={{ textAlign: "center", color: "#222" }}>
+                  {item.data
+                    ? new Date(item.data).toLocaleDateString("pt-BR")
+                    : "N/A"}
+                </P>
+              ),
+            },
+            {
+              header: "Hora",
+              accessor: "hora",
+              flex: 1,
+              render: (item) => (
+                <P style={{ textAlign: "center", color: "#222" }}>
+                  {item.hora ? item.hora.substring(0, 5) : "N/A"}
+                </P>
+              ),
+            },
+            {
+              header: "Excluir",
+              accessor: "actions",
+              flex: 1,
+              render: () => (
+                <TouchableOpacity>
+                  <Trash2 width={18} height={18} color="#ff0000" />
+                </TouchableOpacity>
+              ),
+            },
+          ]}
+          data={
+            Array.isArray(detalhesColeta)
+              ? detalhesColeta
+              : detalhesColeta
+                ? [detalhesColeta]
+                : []
+          }
+          isLoading={detalhesLoading}
+          sheetIndex={detailsSheetIndex}
+          setSheetIndex={setDetailsSheetIndex}
+        />
       </View>
     </ContainerAppCpX>
   );
