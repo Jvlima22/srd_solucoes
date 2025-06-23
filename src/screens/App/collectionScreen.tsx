@@ -19,8 +19,9 @@ import {
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import MaskInput from "react-native-mask-input";
 import { useRoute, RouteProp } from "@react-navigation/native";
-import { Trash2 } from "lucide-react-native";
+import { ChevronDown, Trash2 } from "lucide-react-native";
 import { DetailsBottomSheet } from "@/components/DetailsBottomSheet";
+import { CustomDateTimePicker } from "@components/DateTimePickerModal";
 
 type CollectionScreenParams = {
   manifestoId: string;
@@ -46,6 +47,10 @@ export function CollectionScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedItem, setSelectedItem] = useState<coletaDTO | null>(null);
+
+  // Estados para o picker de data/hora
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
 
   // Estados para o lançamento de ocorrência
   const bottomSheetRef = useRef<BottomSheet>(null);
@@ -331,42 +336,102 @@ export function CollectionScreen() {
                   <P className="mb-2">Ocorrência:</P>
                   <Pressable
                     className="h-12 justify-center rounded-lg border border-gray-300 px-4"
+                    style={{ position: "relative" }}
                     onPress={() => setIsOcorrenciaSheetOpen(true)}
                   >
-                    <P>{selectedOcorrencia || "Selecione uma ocorrência"}</P>
+                    <P style={{ paddingRight: 32 }}>
+                      {selectedOcorrencia || "Selecione uma ocorrência"}
+                    </P>
+                    <View
+                      style={{
+                        position: "absolute",
+                        right: 12,
+                        top: "50%",
+                        transform: [{ translateY: -12 }],
+                      }}
+                    >
+                      <ChevronDown />
+                    </View>
                   </Pressable>
                 </View>
 
                 <View className="mb-4">
-                  <P className="mb-2">Data Ocorrência:</P>
-                  <MaskInput
-                    className="h-12 rounded-lg border border-gray-300 px-4"
-                    value={data}
-                    onChangeText={setData}
-                    mask={[
-                      /\d/,
-                      /\d/,
-                      "/",
-                      /\d/,
-                      /\d/,
-                      "/",
-                      /\d/,
-                      /\d/,
-                      /\d/,
-                      /\d/,
-                    ]}
-                    placeholder="DD/MM/AAAA"
+                  <P className="mb-2">Data da ocorrência:</P>
+                  <TouchableOpacity
+                    onPress={() => setShowDatePicker(true)}
+                    activeOpacity={0.7}
+                  >
+                    <TextInput
+                      className="h-12 rounded-lg border border-gray-300 px-4"
+                      value={data}
+                      editable={false}
+                      placeholder="DD/MM/AAAA"
+                      pointerEvents="none"
+                    />
+                  </TouchableOpacity>
+                  <CustomDateTimePicker
+                    visible={showDatePicker}
+                    mode="date"
+                    onConfirm={(date) => {
+                      setShowDatePicker(false);
+                      // Formatar para DD/MM/AAAA
+                      const formatted = date
+                        .toISOString()
+                        .split("T")[0]
+                        .split("-")
+                        .reverse()
+                        .join("/");
+                      setData(formatted);
+                    }}
+                    onCancel={() => setShowDatePicker(false)}
+                    initialDate={
+                      data
+                        ? (() => {
+                            const [d, m, y] = data.split("/");
+                            return new Date(`${y}-${m}-${d}`);
+                          })()
+                        : undefined
+                    }
                   />
                 </View>
 
                 <View className="mb-4">
-                  <P className="mb-2">Hora Ocorrência:</P>
-                  <MaskInput
-                    className="h-12 rounded-lg border border-gray-300 px-4"
-                    value={hora}
-                    onChangeText={setHora}
-                    mask={[/[0-2]/, /[0-9]/, ":", /[0-5]/, /[0-9]/]}
-                    placeholder="HH:MM"
+                  <P className="mb-2">Hora da ocorrência:</P>
+                  <TouchableOpacity
+                    onPress={() => setShowTimePicker(true)}
+                    activeOpacity={0.7}
+                  >
+                    <TextInput
+                      className="h-12 rounded-lg border border-gray-300 px-4"
+                      value={hora}
+                      editable={false}
+                      placeholder="HH:MM"
+                      pointerEvents="none"
+                    />
+                  </TouchableOpacity>
+                  <CustomDateTimePicker
+                    visible={showTimePicker}
+                    mode="time"
+                    onConfirm={(date) => {
+                      setShowTimePicker(false);
+                      // Formatar para HH:MM
+                      const formatted = date.toTimeString().slice(0, 5);
+                      setHora(formatted);
+                    }}
+                    onCancel={() => setShowTimePicker(false)}
+                    initialDate={
+                      hora
+                        ? (() => {
+                            const [h, m] = hora.split(":");
+                            const d = new Date();
+                            d.setHours(Number(h));
+                            d.setMinutes(Number(m));
+                            d.setSeconds(0);
+                            d.setMilliseconds(0);
+                            return d;
+                          })()
+                        : undefined
+                    }
                   />
                 </View>
 
