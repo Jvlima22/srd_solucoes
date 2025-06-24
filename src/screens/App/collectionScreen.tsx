@@ -3,25 +3,34 @@ import { ContainerAppCpX } from "@components/ContainerAppCpX";
 import { H4, P } from "@components/Typography";
 import {
   ActivityIndicator,
-  FlatList,
   Pressable,
   ScrollView,
   TextInput,
   View,
   TouchableOpacity,
 } from "react-native";
-import React, { useEffect, useRef, useState } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useCallback,
+} from "react";
 import {
   getInfoColeta,
   updateOcorrenciaColeta,
   getDetalhesColeta,
 } from "@/service/services";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
-import MaskInput from "react-native-mask-input";
 import { useRoute, RouteProp } from "@react-navigation/native";
 import { ChevronDown, Trash2 } from "lucide-react-native";
 import { DetailsBottomSheet } from "@/components/DetailsBottomSheet";
 import { CustomDateTimePicker } from "@components/DateTimePickerModal";
+import { BackButton } from "@components/BackButton";
+import {
+  GenericListCard,
+  GenericListCardConfigs,
+} from "@components/GenericListCard";
 
 type CollectionScreenParams = {
   manifestoId: string;
@@ -47,10 +56,13 @@ export function CollectionScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedItem, setSelectedItem] = useState<coletaDTO | null>(null);
+  const [selectedColetas, setSelectedColetas] = useState<string[]>([]);
 
   // Estados para o picker de data/hora
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
+
+  const snapPoints = useMemo(() => ["25%", "50%", "100%"], []);
 
   // Estados para o lançamento de ocorrência
   const bottomSheetRef = useRef<BottomSheet>(null);
@@ -80,24 +92,7 @@ export function CollectionScreen() {
     "Coleta realizado normalmente",
   ];
 
-  // Função para formatar a hora para HH:MM
-  const formatarHora = (hora: string | null): string => {
-    if (!hora) return "N/A";
-
-    // Se a hora já está no formato HH:MM, retorna como está
-    if (hora.length === 5 && hora.includes(":")) {
-      return hora;
-    }
-
-    // Se a hora está no formato HH:MM:SS, remove os segundos
-    if (hora.length === 8 && hora.includes(":")) {
-      return hora.substring(0, 5);
-    }
-
-    return hora;
-  };
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const response = await getInfoColeta(manifestoId);
@@ -107,7 +102,7 @@ export function CollectionScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [manifestoId]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -185,7 +180,6 @@ export function CollectionScreen() {
   };
 
   const handleOpenDetalhes = async (item: coletaDTO) => {
-    console.log("Abrindo detalhes", item);
     setSelectedItem(item);
     setIsDetailsSheetOpen(true);
     setDetailsSheetIndex(1);
@@ -194,7 +188,7 @@ export function CollectionScreen() {
     try {
       const response = await getDetalhesColeta(String(item.coleta));
       setDetalhesColeta(response.data);
-    } catch (error) {
+    } catch {
       alert("Não foi possível carregar os detalhes da coleta.");
       setDetailsSheetIndex(-1);
     } finally {
@@ -204,7 +198,7 @@ export function CollectionScreen() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   if (loading) {
     return (
@@ -228,94 +222,23 @@ export function CollectionScreen() {
       <View className="flex-1 p-7">
         <H4>Relação de Coleta</H4>
 
-        <FlatList
+        <GenericListCard
           data={entregas}
-          keyExtractor={(item, index) => String(item.coleta + "srp" + index)}
-          showsVerticalScrollIndicator={false}
+          config={GenericListCardConfigs.coleta}
           refreshing={refreshing}
           onRefresh={onRefresh}
-          ListEmptyComponent={() => (
-            <View className="flex-1 items-center justify-center">
-              <H4 className="mt-10">Sem dados no momento...</H4>
-            </View>
-          )}
-          renderItem={({ item }) => (
-            <View className="mt-5">
-              <View className="rounded-lg border border-zinc-600 p-5">
-                <View className="mb-5 w-1/2 flex-row items-center justify-center gap-3 self-center rounded-lg bg-blue-900 p-3">
-                  <P className="text-white">COLETA</P>
-
-                  <View className="h-8 w-8 items-center justify-center rounded-full bg-white">
-                    <P>{item.coleta}</P>
-                  </View>
-                </View>
-
-                <View className="flex-col">
-                  <View className="flex-row items-center gap-3">
-                    <P className="text-sm font-bold">Coleta - {item.coleta}</P>
-                  </View>
-
-                  <View className="flex-row items-center gap-3">
-                    <P className="text-sm font-bold">
-                      Total Documento - {item.totalDocumento}
-                    </P>
-                  </View>
-
-                  <View className="flex-row items-center gap-3">
-                    <P className="text-sm">Volume - {item.volume}</P>
-                  </View>
-
-                  <View className="flex-row items-center gap-3">
-                    <P className="text-sm">Peso - {item.peso} kg</P>
-                  </View>
-
-                  <View className="flex-row items-center gap-3">
-                    <P className="text-sm">Local - {item.destinatario}</P>
-                  </View>
-
-                  <View className="flex-row items-center gap-3">
-                    <P className="text-sm">Cidade - {item.cidade}</P>
-                  </View>
-
-                  <View className="flex-row items-center gap-3">
-                    <P className="text-sm">UF - {item.uf}</P>
-                  </View>
-
-                  <View className="flex-row items-center gap-3">
-                    <P className="text-sm font-bold">Status - {item.status}</P>
-                  </View>
-                </View>
-
-                <View className="mt-5 items-center justify-center">
-                  <Button
-                    size="icon"
-                    className="w-1/3"
-                    onPress={() => handleOpenDetalhes(item)}
-                  >
-                    <P className="text-base font-bold text-white">Detalhes</P>
-                  </Button>
-                </View>
-
-                <View className="mt-3 items-center justify-center">
-                  <Button
-                    className="w-1/2"
-                    style={{ backgroundColor: "#dc2626" }}
-                    onPress={() => handleLancarOcorrencia(item)}
-                  >
-                    <P className="text-base font-bold text-white">
-                      Lançar ocorrência
-                    </P>
-                  </Button>
-                </View>
-              </View>
-            </View>
-          )}
+          selectedItems={selectedColetas}
+          setSelectedItems={setSelectedColetas}
+          onOpenDetails={(item) => handleOpenDetalhes(item as coletaDTO)}
+          onLancarOcorrencia={(item) =>
+            handleLancarOcorrencia(item as coletaDTO)
+          }
         />
 
         {isBottomSheetOpen && (
           <BottomSheet
             ref={bottomSheetRef}
-            snapPoints={["25%", "50%", "90%"]}
+            snapPoints={snapPoints}
             enablePanDownToClose={true}
             onClose={() => setIsBottomSheetOpen(false)}
           >
@@ -486,16 +409,15 @@ export function CollectionScreen() {
                 )}
 
                 <View className="flex-row justify-between gap-4">
-                  <Button
+                  <BackButton
                     className="flex-1"
-                    variant="secondary"
                     onPress={() => {
                       bottomSheetRef.current?.close();
                       setIsBottomSheetOpen(false);
                     }}
                   >
                     <P className="text-white">Voltar</P>
-                  </Button>
+                  </BackButton>
                   <Button className="flex-1" onPress={handleSalvarOcorrencia}>
                     <P className="text-white">Salvar</P>
                   </Button>

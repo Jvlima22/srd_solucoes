@@ -1,4 +1,3 @@
-/* eslint-disable jsx-a11y/alt-text */
 import { Image, ScrollView, View } from "react-native";
 
 import LogoIcon from "@assets/icon.png";
@@ -10,6 +9,7 @@ import { ContainerX } from "@components/ContainerX";
 import { H3, H4, P } from "@components/Typography";
 import { Button } from "@components/Button";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import type { RootStackParamList } from "../../@types/routes";
 
 type Props = NativeStackScreenProps<RootStackParamList, "StartupScreen">;
 export function StartupScreen({ navigation }: Props) {

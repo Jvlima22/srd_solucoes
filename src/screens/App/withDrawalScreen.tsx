@@ -1,10 +1,15 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useCallback,
+} from "react";
 import { Button } from "@components/Button";
 import { ContainerAppCpX } from "@components/ContainerAppCpX";
 import { H4, P } from "@components/Typography";
 import {
   ActivityIndicator,
-  FlatList,
   Pressable,
   ScrollView,
   TextInput,
@@ -18,11 +23,14 @@ import {
   getDetalhesRetirada,
 } from "@/service/services";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
-import MaskInput from "react-native-mask-input";
 import { useRoute, RouteProp } from "@react-navigation/native";
 import { Check, ChevronDown, Trash2 } from "lucide-react-native";
 import { DetailsBottomSheet } from "@/components/DetailsBottomSheet";
 import { CustomDateTimePicker } from "@components/DateTimePickerModal";
+import {
+  GenericListCard,
+  GenericListCardConfigs,
+} from "@components/GenericListCard";
 
 type WithdrawalScreenParams = {
   manifestoId: string;
@@ -56,6 +64,7 @@ export function WithDrawalScreen() {
   const [loteIds, setLoteIds] = useState<string[]>([]);
   const [loteFretes, setLoteFretes] = useState<string[]>([]);
   const [isLote, setIsLote] = useState(false);
+  const snapPoints = useMemo(() => ["25%", "50%", "100%"], []);
 
   // Estados para o picker de data/hora
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -74,7 +83,7 @@ export function WithDrawalScreen() {
     "Retirada realizada normalmente",
   ];
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!manifestoId) return;
 
     setLoading(true);
@@ -86,7 +95,7 @@ export function WithDrawalScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [manifestoId]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -199,7 +208,7 @@ export function WithDrawalScreen() {
     try {
       const response = await getDetalhesRetirada(String(item.retirada));
       setDetalhesRetirada(response.data);
-    } catch (error) {
+    } catch {
       alert("Não foi possível carregar os detalhes da retirada.");
       setDetailsSheetIndex(-1);
     } finally {
@@ -209,7 +218,7 @@ export function WithDrawalScreen() {
 
   useEffect(() => {
     fetchData();
-  }, [manifestoId]);
+  }, [fetchData]);
 
   if (loading) {
     return (
@@ -271,113 +280,17 @@ export function WithDrawalScreen() {
           </Button>
         </View>
 
-        <FlatList
+        <GenericListCard
           data={retiradas}
-          keyExtractor={(item, index) => String(item.retirada + "srp" + index)}
-          showsVerticalScrollIndicator={false}
+          config={GenericListCardConfigs.withdrawal}
           refreshing={refreshing}
           onRefresh={onRefresh}
-          ListEmptyComponent={() => (
-            <View className="flex-1 items-center justify-center">
-              <H4 className="mt-10">Sem dados no momento...</H4>
-            </View>
-          )}
-          renderItem={({ item }) => {
-            const id = String(item.retirada) + "-" + item.frete;
-            return (
-              <View className="mt-5">
-                <View className="rounded-lg border border-zinc-600 p-5">
-                  <View className="w-1/1 mb-5 flex-row items-center justify-center gap-5 self-center rounded-lg bg-blue-900 p-3">
-                    <Button
-                      className="h-8 w-8 flex-1 flex-row items-center bg-transparent"
-                      style={{ backgroundColor: "transparent", elevation: 0 }}
-                      variant="default"
-                      onPress={() => {
-                        setSelectedDocumentos((prev) =>
-                          prev.includes(id)
-                            ? prev.filter((doc) => doc !== id)
-                            : [...prev, id],
-                        );
-                      }}
-                    >
-                      {selectedDocumentos.includes(id) ? (
-                        <>
-                          <P className="text-base font-bold text-white">
-                            Selecionado
-                          </P>
-                          <View className="ml-8 h-6 w-8 items-center justify-center rounded-full border border-zinc-300 bg-white">
-                            <Check size={16} color="#2563eb" />
-                          </View>
-                        </>
-                      ) : (
-                        <>
-                          <P className="text-base font-bold text-white">
-                            Selecionar
-                          </P>
-                          <View className="ml-8 h-6 w-8 items-center justify-center rounded-full border border-zinc-300 bg-white" />
-                        </>
-                      )}
-                    </Button>
-                  </View>
-                  <View className="flex-col">
-                    <View className="flex-row items-center gap-3">
-                      <P className="text-sm font-bold">Frete - {item.frete}</P>
-                    </View>
-
-                    <View className="flex-row items-center gap-3">
-                      <P className="text-sm font-bold">
-                        Retirada - {item.retirada}
-                      </P>
-                    </View>
-
-                    <View className="flex-row items-center gap-3">
-                      <P className="text-sm">CTE - {item.cte}</P>
-                    </View>
-
-                    <View className="flex-row items-center gap-3">
-                      <P className="text-sm">Destino - {item.destino}</P>
-                    </View>
-
-                    <View className="flex-row items-center gap-3">
-                      <P className="text-sm">Cidade - {item.cidade}</P>
-                    </View>
-
-                    <View className="flex-row items-center gap-3">
-                      <P className="text-sm">UF - {item.uf}</P>
-                    </View>
-
-                    <View className="flex-row items-center gap-3">
-                      <P className="text-sm font-bold">
-                        Status - {item.status}
-                      </P>
-                    </View>
-                  </View>
-
-                  <View className="mt-8 items-center justify-center">
-                    <Button
-                      onPress={() => handleOpenDetalhes(item)}
-                      className="w-1/3"
-                      size="icon"
-                    >
-                      <P className="text-base font-bold text-white">Detalhes</P>
-                    </Button>
-                  </View>
-
-                  <View className="mt-3 items-center justify-center">
-                    <Button
-                      className="w-1/2"
-                      style={{ backgroundColor: "#dc2626" }}
-                      onPress={() => handleLancarOcorrencia(item)}
-                    >
-                      <P className="text-base font-bold text-white">
-                        Lançar ocorrência
-                      </P>
-                    </Button>
-                  </View>
-                </View>
-              </View>
-            );
-          }}
+          selectedItems={selectedDocumentos}
+          setSelectedItems={setSelectedDocumentos}
+          onOpenDetails={(item) => handleOpenDetalhes(item as retiradaDTO)}
+          onLancarOcorrencia={(item) =>
+            handleLancarOcorrencia(item as retiradaDTO)
+          }
         />
 
         <DetailsBottomSheet
@@ -455,7 +368,7 @@ export function WithDrawalScreen() {
         {isBottomSheetOpen && (
           <BottomSheet
             ref={bottomSheetRef}
-            snapPoints={["25%", "50%", "90%"]}
+            snapPoints={snapPoints}
             enablePanDownToClose={true}
             onClose={() => {
               setIsBottomSheetOpen(false);

@@ -2,7 +2,7 @@ import React from "react";
 import { View, ActivityIndicator, TextInput } from "react-native";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import { H4, P } from "./Typography";
-import { Button } from "./Button";
+import { BackButton } from "@components/BackButton";
 
 interface PrimaryField {
   label: string;
@@ -191,7 +191,7 @@ export function DetailsBottomSheet({
 
         {/* Botão VOLTAR */}
         <View style={{ alignItems: "flex-end" }}>
-          <Button
+          <BackButton
             style={{
               backgroundColor: "#1e3a8a",
               borderRadius: 4,
@@ -205,7 +205,7 @@ export function DetailsBottomSheet({
             <P style={{ color: "#fff", fontWeight: "bold", fontSize: 16 }}>
               VOLTAR
             </P>
-          </Button>
+          </BackButton>
         </View>
       </BottomSheetView>
     </BottomSheet>

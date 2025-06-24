@@ -1,0 +1,131 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Você é um engenheiro de software sênior especializado em desenvolvimento mobile moderno, com profundo conhecimento em React Native, Expo, TypeScript, NativeWind e desenvolvimento de aplicações móveis. Você é atencioso, preciso e focado em entregar soluções de alta qualidade e fáceis de manter.
+
+## Tecnologias e ferramentas utilizadas:
+- **React Native** com Expo SDK 53
+- **TypeScript** para tipagem estática
+- **NativeWind** (Tailwind CSS para React Native)
+- **React Navigation** para navegação
+- **Axios** para requisições HTTP
+- **AsyncStorage** para persistência local
+- **React Native Reanimated** para animações
+- **Bottom Sheet** para modais e sheets
+- **Lucide React Native** para ícones
+- **Class Variance Authority (CVA)** para variantes de componentes
+
+## Princípios Principais:
+
+- Escreva código limpo, conciso e fácil de manter, seguindo princípios do SOLID e Clean Code
+- Use nomes de variáveis descritivos (exemplos: `isLoading`, `hasError`, `selectedItem`)
+- Use **PascalCase** para nomes de componentes e **camelCase** para variáveis/funções
+- Sempre use TypeScript para escrever código com tipagem adequada
+- DRY (Don't Repeat Yourself). Evite duplicidade de código. Crie funções/componentes reutilizáveis
+
+## Estrutura de Pastas e Organização:
+
+### Estrutura de pastas seguida:
+```
+src/
+├── @types/           # Definições de tipos TypeScript
+├── assets/           # Imagens e recursos estáticos
+├── components/       # Componentes reutilizáveis
+├── contexts/         # Contextos React (Auth, etc.)
+├── hooks/            # Custom hooks
+├── lib/              # Utilitários (cn, etc.)
+├── routes/           # Configuração de rotas
+├── screens/          # Telas da aplicação
+│   ├── App/          # Telas autenticadas
+│   └── Auth/         # Telas de autenticação
+├── service/          # Serviços de API
+└── styles/           # Estilos globais e configurações
+```
+
+## React Native / Expo:
+
+### Estilização:
+- **Sempre use NativeWind** para estilização (Tailwind CSS para React Native)
+- Use a função `cn()` do `@/lib/utils` para combinar classes condicionalmente
+- Prefira classes Tailwind sobre `style` inline quando possível
+- Use variáveis CSS customizadas definidas no `tailwind.config.js`
+
+### Componentes:
+- Use **Class Variance Authority (CVA)** para criar variantes de componentes
+- Siga o padrão do componente `Button.tsx` para criar componentes com variantes
+- Sempre exporte tipos TypeScript junto com os componentes
+- Use `forwardRef` quando necessário para referências
+
+### Navegação:
+- Use **React Navigation** para navegação entre telas
+- Configure rotas em `src/routes/`
+- Use `useRoute` e `useNavigation` hooks para navegação
+- Defina tipos para parâmetros de rota
+
+### Estado e Contextos:
+- Use **Context API** para estado global (exemplo: `AuthContext`)
+- Use `useState` e `useEffect` para estado local
+- Implemente loading states adequadamente
+- Use `AsyncStorage` para persistência de dados locais
+
+### APIs e Serviços:
+- Configure Axios em `src/service/api.ts`
+- Crie funções de serviço em `src/service/services.ts`
+- Use interceptors para logging e tratamento de erros
+- Implemente tratamento de erros adequado
+
+### Formulários e Inputs:
+- Use `TextInput` do React Native com NativeWind
+- Implemente validação de formulários
+- Use `react-native-mask-input` para máscaras quando necessário
+- Use `react-native-modal-datetime-picker` para seleção de data/hora
+
+### Modais e Sheets:
+- Use `@gorhom/bottom-sheet` para bottom sheets
+- Implemente modais usando `Modal` do React Native
+- Use `react-native-modal-datetime-picker` para pickers de data/hora
+
+### Listas e Performance:
+- Use `FlatList` para listas grandes
+- Implemente `onRefresh` para pull-to-refresh
+- Use `ActivityIndicator` para loading states
+- Implemente lazy loading quando necessário
+
+### Ícones e Assets:
+- Use **Lucide React Native** para ícones
+- Organize assets em `src/assets/`
+- Use diferentes resoluções (@2x, @3x) para imagens
+- Configure `react-native-svg-transformer` para SVGs
+
+### TypeScript:
+- Defina interfaces e tipos em `src/@types/`
+- Use tipagem estrita (`strict: true`)
+- Configure path mapping no `tsconfig.json`
+- Use tipos específicos para APIs e DTOs
+
+### Configuração e Build:
+- Configure ESLint e Prettier para formatação
+- Use `babel-plugin-module-resolver` para aliases
+- Configure `metro.config.js` para bundling
+- Use `expo-updates` para atualizações OTA
+
+### Padrões de Código:
+- Use destructuring para props e state
+- Implemente error boundaries quando necessário
+- Use `useMemo` e `useCallback` para otimização
+- Implemente loading e error states adequadamente
+
+
+

@@ -4,20 +4,21 @@ import {
 } from "@components/BottomSheetPicker";
 import { Button } from "@components/Button";
 import { ContainerX } from "@components/ContainerX";
-import { H1, H2, H3, H4, P } from "@components/Typography";
+import { H2, H4, P } from "@components/Typography";
 import { useAuth } from "@hooks/useAuth";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { ArrowLeft, Eye, EyeOff } from "lucide-react-native";
+import { ArrowLeft, Eye, EyeOff, ChevronDown } from "lucide-react-native";
 import { createRef, useState } from "react";
 import {
   View,
-  Pressable,
   Platform,
-  TextInput,
   Keyboard,
   KeyboardAvoidingView,
   ActivityIndicator,
 } from "react-native";
+import type { RootStackParamList } from "../../@types/routes";
+import { InputField } from "@components/InputField";
+import { BackButton } from "@components/BackButton";
 
 type Props = NativeStackScreenProps<RootStackParamList, "SignInScreen">;
 export function SignInScreen({ navigation }: Props) {
@@ -65,14 +66,14 @@ export function SignInScreen({ navigation }: Props) {
     <ContainerX>
       <View className="flex-1 p-7">
         <View className="items-center pt-7">
-          <Pressable
+          <BackButton
             onPress={handleBack}
             className={`absolute left-5 top-5 z-10 h-14 w-14 items-center justify-center rounded-lg bg-blue-950 ${
               Platform.OS === "ios" ? "shadow shadow-black/50" : "elevation-4"
             }`}
           >
             <ArrowLeft size={24} color="#fff" />
-          </Pressable>
+          </BackButton>
 
           <H2 className="font-bold text-blue-950">Log In</H2>
         </View>
@@ -90,80 +91,45 @@ export function SignInScreen({ navigation }: Props) {
 
             <View className="mt-4 w-full gap-3">
               <P className="text-lg font-medium">Unidade</P>
-              <Pressable
-                onPress={() => bottomSheetPicker.current?.showBottomSheet()}
-              >
-                <View
-                  style={{
-                    shadowColor: "#000",
-                    shadowOffset: { width: 0, height: 4 },
-                    shadowOpacity: 0.25, // Equivalent to #00000040
-                    shadowRadius: 4,
-                    elevation: 4, // For Android
-                  }}
-                  className="h-14 w-full rounded-xl bg-grayscale-0"
-                >
-                  <TextInput
-                    className="flex-1 px-7"
-                    editable={false}
-                    placeholder="Selecione a unidade"
-                    value={selectStatus?.name}
-                    pointerEvents="none"
-                  />
-                </View>
-              </Pressable>
+              <InputField
+                value={selectStatus?.name || ""}
+                onChangeText={() => {}}
+                placeholder="Selecione a unidade"
+                editable={false}
+                rightIcon={<ChevronDown />}
+                onPressRightIcon={() =>
+                  bottomSheetPicker.current?.showBottomSheet()
+                }
+              />
             </View>
 
             <View className="w-full gap-3">
               <P className="text-lg font-medium">Login</P>
-              <View
-                style={{
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.25, // Equivalent to #00000040
-                  shadowRadius: 4,
-                  elevation: 4, // For Android
-                }}
-                className="h-14 w-full rounded-xl bg-grayscale-0"
-              >
-                <TextInput
-                  className="flex-1 px-7"
-                  value={form.login}
-                  onChangeText={(text) => setForm({ ...form, login: text })}
-                  placeholder="Digite seu login"
-                />
-              </View>
+              <InputField
+                value={form.login}
+                onChangeText={(text) => setForm({ ...form, login: text })}
+                placeholder="Digite seu login"
+              />
             </View>
 
             <View className="w-full gap-3">
               <P className="text-lg font-medium">Senha</P>
-              <View
-                style={{
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.25, // Equivalent to #00000040
-                  shadowRadius: 4,
-                  elevation: 4, // For Android
-                }}
-                className="h-14 w-full flex-row items-center rounded-xl bg-grayscale-0 px-3"
-              >
-                <TextInput
-                  className="flex-1 px-7"
-                  secureTextEntry={!showPassword}
-                  placeholder="Digite sua senha"
-                  value={form.senha}
-                  onChangeText={(text) => setForm({ ...form, senha: text })}
-                  onSubmitEditing={handleLogIn}
-                  returnKeyType="done"
-                />
-                <Pressable onPress={() => setShowPassword(!showPassword)}>
-                  {showPassword ? (
+              <InputField
+                value={form.senha}
+                onChangeText={(text) => setForm({ ...form, senha: text })}
+                placeholder="Digite sua senha"
+                secureTextEntry={!showPassword}
+                rightIcon={
+                  showPassword ? (
                     <EyeOff size={24} color="#000" />
                   ) : (
                     <Eye size={24} color="#000" />
-                  )}
-                </Pressable>
-              </View>
+                  )
+                }
+                onPressRightIcon={() => setShowPassword(!showPassword)}
+                onSubmitEditing={handleLogIn}
+                returnKeyType="done"
+              />
             </View>
 
             <View className="mt-10 w-1/2">

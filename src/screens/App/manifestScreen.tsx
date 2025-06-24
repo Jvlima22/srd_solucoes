@@ -276,7 +276,7 @@ export function ManifestScreen() {
           )}
           renderItem={({ item }) => (
             <View className="mt-8">
-              <View className="border p-5">
+              <View className="rounded-lg border border-zinc-600 p-5">
                 <View className="mb-5 w-1/2 flex-row items-center justify-center gap-3 self-center rounded-lg bg-blue-900 p-3">
                   <P className="text-white">MANIFESTO</P>
 

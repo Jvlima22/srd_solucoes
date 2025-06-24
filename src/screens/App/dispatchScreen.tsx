@@ -1,9 +1,8 @@
 import { Button } from "@components/Button";
 import { ContainerAppCpX } from "@components/ContainerAppCpX";
-import { H3, H4, P } from "@components/Typography";
+import { H4, P } from "@components/Typography";
 import {
   ActivityIndicator,
-  FlatList,
   Pressable,
   ScrollView,
   TextInput,
@@ -11,21 +10,30 @@ import {
   TouchableOpacity,
 } from "react-native";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useCallback,
+} from "react";
 import {
   getInfoDespacho,
   updateOcorrenciaDespacho,
   getDetalhesDespacho,
 } from "@/service/services";
-import { CustomModal } from "@/components/CustomModal";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
-import MaskInput from "react-native-mask-input";
 import { useRoute, RouteProp } from "@react-navigation/native";
 
 import { Check, ChevronDown, Trash2 } from "lucide-react-native";
 import type { DetalhesDespachoDTO } from "../../@types/detalhesDespachoDTO";
 import { DetailsBottomSheet } from "@/components/DetailsBottomSheet";
 import { CustomDateTimePicker } from "@components/DateTimePickerModal";
+import { BackButton } from "@components/BackButton";
+import {
+  GenericListCard,
+  GenericListCardConfigs,
+} from "@components/GenericListCard";
 
 type DispatchScreenParams = {
   manifestoId: string;
@@ -42,7 +50,6 @@ export function DispatchScreen() {
   const [entregas, setEntregas] = useState<despachoDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState<despachoDTO | null>(null);
   const [selectedDocumentos, setSelectedDocumentos] = useState<string[]>([]);
   const [selectAll, setSelectAll] = useState(false);
@@ -50,6 +57,8 @@ export function DispatchScreen() {
   const [loteMinutas, setLoteMinutas] = useState<string[]>([]);
   const [loteFretes, setLoteFretes] = useState<string[]>([]);
   const [isLote, setIsLote] = useState(false);
+
+  const snapPoints = useMemo(() => ["25%", "50%", "100%"], []);
 
   // Estados para o BottomSheet de detalhes
   const [isDetailsSheetOpen, setIsDetailsSheetOpen] = useState(false);
@@ -167,7 +176,6 @@ export function DispatchScreen() {
   };
 
   const handleOpenDetalhes = async (item: despachoDTO) => {
-    console.log("Abrindo detalhes", item);
     setSelectedItem(item);
     setIsDetailsSheetOpen(true);
     setDetailsSheetIndex(1);
@@ -176,7 +184,7 @@ export function DispatchScreen() {
     try {
       const response = await getDetalhesDespacho(String(item.minutaDespacho));
       setDetalhesDespacho(response.data);
-    } catch (error) {
+    } catch {
       alert("Não foi possível carregar os detalhes do despacho.");
       setDetailsSheetIndex(-1);
     } finally {
@@ -184,7 +192,7 @@ export function DispatchScreen() {
     }
   };
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const response = await getInfoDespacho(manifestoId);
@@ -194,7 +202,7 @@ export function DispatchScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [manifestoId]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -210,7 +218,7 @@ export function DispatchScreen() {
 
   useEffect(() => {
     fetchData();
-  }, [manifestoId]);
+  }, [fetchData]);
 
   if (loading) {
     return (
@@ -272,114 +280,17 @@ export function DispatchScreen() {
           </Button>
         </View>
 
-        <FlatList
+        <GenericListCard
           data={entregas}
-          keyExtractor={(item, index) => String(item.frete + "srp" + index)}
-          showsVerticalScrollIndicator={false}
+          config={GenericListCardConfigs.dispatch}
           refreshing={refreshing}
           onRefresh={onRefresh}
-          ListEmptyComponent={() => (
-            <View className="flex-1 items-center justify-center">
-              <H4 className="mt-10">Sem dados no momento...</H4>
-            </View>
-          )}
-          renderItem={({ item }) => {
-            const id = String(item.minutaDespacho) + "-" + item.frete;
-            return (
-              <View className="mt-3">
-                <View className="rounded-lg border border-zinc-600 p-5">
-                  <View className="w-1/1 mb-5 flex-row items-center justify-center gap-5 self-center rounded-lg bg-blue-900 p-3">
-                    <Button
-                      className="h-8 w-8 flex-1 flex-row items-center bg-transparent"
-                      style={{ backgroundColor: "transparent", elevation: 0 }}
-                      variant="default"
-                      onPress={() => {
-                        setSelectedDocumentos((prev) =>
-                          prev.includes(id)
-                            ? prev.filter((doc) => doc !== id)
-                            : [...prev, id],
-                        );
-                      }}
-                    >
-                      {selectedDocumentos.includes(id) ? (
-                        <>
-                          <P className="text-base font-bold text-white">
-                            Selecionado
-                          </P>
-                          <View className="ml-8 h-6 w-8 items-center justify-center rounded-full border border-zinc-300 bg-white">
-                            <Check size={16} color="#2563eb" />
-                          </View>
-                        </>
-                      ) : (
-                        <>
-                          <P className="text-base font-bold text-white">
-                            Selecionar
-                          </P>
-                          <View className="ml-8 h-6 w-8 items-center justify-center rounded-full border border-zinc-300 bg-white" />
-                        </>
-                      )}
-                    </Button>
-                  </View>
-
-                  <View className="flex-col">
-                    <View className="flex-row items-center gap-3">
-                      <P className="text-sm font-bold">Frete - {item.frete}</P>
-                    </View>
-
-                    <View className="flex-row items-center gap-3">
-                      <P className="text-sm font-bold">
-                        Minuta - {item.minutaDespacho}
-                      </P>
-                    </View>
-
-                    <View className="flex-row items-center gap-3">
-                      <P className="text-sm">CTE - {item.CTE}</P>
-                    </View>
-
-                    <View className="flex-row items-center gap-3">
-                      <P className="text-sm">Destino - {item.destino}</P>
-                    </View>
-
-                    <View className="flex-row items-center gap-3">
-                      <P className="text-sm">Cidade - {item.cidade}</P>
-                    </View>
-
-                    <View className="flex-row items-center gap-3">
-                      <P className="text-sm">UF - {item.uf}</P>
-                    </View>
-
-                    <View className="flex-row items-center gap-3">
-                      <P className="text-sm font-bold">
-                        Status - {item.status}
-                      </P>
-                    </View>
-                  </View>
-
-                  <View className="mt-8 items-center justify-center">
-                    <Button
-                      className="w-1/3"
-                      size="icon"
-                      onPress={() => handleOpenDetalhes(item)}
-                    >
-                      <P className="text-base font-bold text-white">Detalhes</P>
-                    </Button>
-                  </View>
-
-                  <View className="mt-3 items-center justify-center">
-                    <Button
-                      className="w-1/2"
-                      style={{ backgroundColor: "#dc2626" }}
-                      onPress={() => handleLancarOcorrencia(item)}
-                    >
-                      <P className="text-base font-bold text-white">
-                        Lançar ocorrência
-                      </P>
-                    </Button>
-                  </View>
-                </View>
-              </View>
-            );
-          }}
+          selectedItems={selectedDocumentos}
+          setSelectedItems={setSelectedDocumentos}
+          onOpenDetails={(item) => handleOpenDetalhes(item as despachoDTO)}
+          onLancarOcorrencia={(item) =>
+            handleLancarOcorrencia(item as despachoDTO)
+          }
         />
 
         <DetailsBottomSheet
@@ -453,7 +364,7 @@ export function DispatchScreen() {
         {isBottomSheetOpen && (
           <BottomSheet
             ref={bottomSheetRef}
-            snapPoints={["25%", "50%", "90%"]}
+            snapPoints={snapPoints}
             enablePanDownToClose={true}
             onClose={() => {
               setIsBottomSheetOpen(false);
@@ -611,16 +522,15 @@ export function DispatchScreen() {
                 </View>
 
                 <View className="flex-row justify-between gap-4">
-                  <Button
+                  <BackButton
                     className="flex-1"
-                    variant="secondary"
                     onPress={() => {
                       bottomSheetRef.current?.close();
                       setIsBottomSheetOpen(false);
                     }}
                   >
                     <P className="text-white">Voltar</P>
-                  </Button>
+                  </BackButton>
                   <Button className="flex-1" onPress={handleSalvarOcorrencia}>
                     <P className="text-white">Salvar</P>
                   </Button>
