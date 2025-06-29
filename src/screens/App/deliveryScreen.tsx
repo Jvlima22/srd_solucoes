@@ -8,6 +8,8 @@ import {
   TouchableOpacity,
   View,
   TextInput,
+  Alert,
+  ScrollView,
 } from "react-native";
 import React, {
   useEffect,
@@ -20,6 +22,7 @@ import {
   getInfoEntrega,
   getDetalhesEntrega,
   updateOcorrenciaEntrega,
+  deleteOcorrenciaEntrega,
 } from "@/service/services";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import { useRoute, RouteProp } from "@react-navigation/native";
@@ -31,6 +34,9 @@ import {
   GenericListCard,
   GenericListCardConfigs,
 } from "@components/GenericListCard";
+import { CustomModal } from "@components/CustomModal";
+import * as DocumentPicker from "expo-document-picker";
+import { Portal } from "@rn-primitives/portal";
 
 type DeliveryScreenParams = {
   manifestoId: string;
@@ -61,14 +67,20 @@ export function DeliveryScreen() {
 
   // Bottom Sheet
   const bottomSheetRef = useRef<BottomSheet>(null);
-  const snapPoints = useMemo(() => ["25%", "50%", "100%"], []);
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
   const [documento, setDocumento] = useState("");
   const [frete, setFrete] = useState("");
   const [data, setData] = useState("");
   const [hora, setHora] = useState("");
   const [observacao, setObservacao] = useState("");
-  const [selectedOcorrencia, setSelectedOcorrencia] = useState("");
+  const [selectedOcorrencia, setSelectedOcorrencia] = useState<
+    | "Aguardado no local"
+    | "Cliente recusou a entrega"
+    | "Entrega cancelada pelo cliente"
+    | "Entrega realizado normalmente"
+    | "Em transito para entrega"
+    | ""
+  >("");
   const [isOcorrenciaSheetOpen, setIsOcorrenciaSheetOpen] = useState(false);
   const [selectedDocumentos, setSelectedDocumentos] = useState<string[]>([]);
   const [selectAll, setSelectAll] = useState(false);
@@ -87,10 +99,36 @@ export function DeliveryScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
 
+  // Estado para modal de exclusão
+  const [deleteModal, setDeleteModal] = useState<null | {
+    id: number;
+    numero: number;
+    ocorrencia: string;
+    data: string;
+    hora: string;
+  }>(null);
+
+  const [recebedor, setRecebedor] = useState("");
+  const [documentoRecebedor, setDocumentoRecebedor] = useState("");
+  const [idTipoRecebedor, setIdTipoRecebedor] = useState<number | null>(null);
+  const [isTipoRecebedorSheetOpen, setIsTipoRecebedorSheetOpen] =
+    useState(false);
+  const tipoRecebedorOptions = [
+    { id: 1, nome: "O PRÓPRIO" },
+    { id: 2, nome: "FAMÍLIA" },
+    { id: 3, nome: "VIZINHO" },
+    { id: 4, nome: "PORTEIRO" },
+  ];
+
+  // Estado para o comprovante
+  const [comprovante, setComprovante] = useState<any>(null);
+
   const ocorrencias = [
     "Aguardado no local",
     "Cliente recusou a entrega",
+    "Em transito para entrega",
     "Entrega cancelada pelo cliente",
+    "Entrega realizado normalmente",
   ];
 
   const fetchData = useCallback(async () => {
@@ -127,30 +165,126 @@ export function DeliveryScreen() {
     bottomSheetRef.current?.expand();
   };
 
+  // Função para selecionar arquivo
+  const handleSelectFile = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ["image/*", "application/pdf"],
+        copyToCacheDirectory: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const file = result.assets[0];
+        setComprovante({
+          uri: file.uri,
+          name: file.name,
+          type: file.mimeType,
+          size: file.size,
+        });
+      }
+    } catch (error) {
+      console.error("Erro ao selecionar arquivo:", error);
+      alert("Erro ao selecionar arquivo. Tente novamente.");
+    }
+  };
+
   const handleSalvarOcorrencia = async () => {
     try {
       if (!selectedOcorrencia || !data || !hora) {
         alert("Por favor, preencha todos os campos obrigatórios");
         return;
       }
+
+      // Validação adicional para "Entrega realizado normalmente"
+      if (selectedOcorrencia === "Entrega realizado normalmente") {
+        if (
+          !recebedor ||
+          !documentoRecebedor ||
+          !idTipoRecebedor ||
+          !comprovante
+        ) {
+          alert(
+            "Para 'Entrega realizado normalmente' todos os campos obrigatórios devem ser preenchidos e o comprovante enviado.",
+          );
+          return;
+        }
+      }
+
       if (isLote && loteDocs.length > 0) {
         // Lançar ocorrência para todos os documentos/fretes em lote
         for (let i = 0; i < loteDocs.length; i++) {
-          await updateOcorrenciaEntrega(Number(loteDocs[i]), {
+          const payload: any = {
             data_ocorrencia: data,
             hora_ocorrencia: hora,
             observacao: observacao,
             ocorrencia: selectedOcorrencia,
-          });
+          };
+
+          // Adiciona campos extras se for "Entrega realizado normalmente"
+          if (selectedOcorrencia === "Entrega realizado normalmente") {
+            payload.recebedor = recebedor;
+            payload.documento_recebedor = documentoRecebedor;
+            payload.id_tipo_recebedor = idTipoRecebedor;
+
+            // Criar FormData para enviar o arquivo
+            if (comprovante) {
+              const formData = new FormData();
+              formData.append("comprovante", {
+                uri: comprovante.uri,
+                name: comprovante.name,
+                type: comprovante.type,
+              } as any);
+
+              // Adicionar outros campos ao FormData
+              Object.keys(payload).forEach((key) => {
+                formData.append(key, payload[key]);
+              });
+
+              await updateOcorrenciaEntrega(Number(loteFretes[i]), formData);
+            } else {
+              await updateOcorrenciaEntrega(Number(loteFretes[i]), payload);
+            }
+          } else {
+            await updateOcorrenciaEntrega(Number(loteFretes[i]), payload);
+          }
         }
       } else {
-        await updateOcorrenciaEntrega(Number(documento), {
+        const payload: any = {
           data_ocorrencia: data,
           hora_ocorrencia: hora,
           observacao: observacao,
           ocorrencia: selectedOcorrencia,
-        });
+        };
+
+        // Adiciona campos extras se for "Entrega realizado normalmente"
+        if (selectedOcorrencia === "Entrega realizado normalmente") {
+          payload.recebedor = recebedor;
+          payload.documento_recebedor = documentoRecebedor;
+          payload.id_tipo_recebedor = idTipoRecebedor;
+
+          // Criar FormData para enviar o arquivo
+          if (comprovante) {
+            const formData = new FormData();
+            formData.append("comprovante", {
+              uri: comprovante.uri,
+              name: comprovante.name,
+              type: comprovante.type,
+            } as any);
+
+            // Adicionar outros campos ao FormData
+            Object.keys(payload).forEach((key) => {
+              formData.append(key, payload[key]);
+            });
+
+            await updateOcorrenciaEntrega(Number(frete), formData);
+          } else {
+            await updateOcorrenciaEntrega(Number(frete), payload);
+          }
+        } else {
+          await updateOcorrenciaEntrega(Number(frete), payload);
+        }
       }
+
       // Atualiza a lista de entregas
       await fetchData();
       // Fecha o bottom sheet e limpa o formulário
@@ -163,6 +297,10 @@ export function DeliveryScreen() {
       setHora("");
       setObservacao("");
       setSelectedOcorrencia("");
+      setRecebedor("");
+      setDocumentoRecebedor("");
+      setIdTipoRecebedor(null);
+      setComprovante(null);
       setIsLote(false);
       setLoteDocs([]);
       setLoteFretes([]);
@@ -227,6 +365,26 @@ export function DeliveryScreen() {
     setIsLote(true);
     setIsBottomSheetOpen(true);
     bottomSheetRef.current?.expand();
+  };
+
+  // Função para excluir ocorrência
+  const handleDeleteOcorrencia = async (ocorrenciaId: number) => {
+    try {
+      await deleteOcorrenciaEntrega(ocorrenciaId.toString());
+      if (selectedItem) {
+        const response = await getDetalhesEntrega(String(selectedItem.frete));
+        setDetalhesEntrega(response.data);
+      }
+      setDeleteModal(null);
+      Alert.alert("Sucesso", "Ocorrência excluída com sucesso!");
+    } catch (error) {
+      console.error("Erro ao excluir ocorrência:", error);
+      setDeleteModal(null);
+      Alert.alert(
+        "Erro",
+        "Erro ao excluir ocorrência. Por favor, tente novamente.",
+      );
+    }
   };
 
   useEffect(() => {
@@ -313,7 +471,6 @@ export function DeliveryScreen() {
           isOpen={isDetailsSheetOpen}
           onClose={() => {
             setIsDetailsSheetOpen(false);
-            setDetalhesEntrega(null);
             setDetailsSheetIndex(-1);
           }}
           bottomSheetRef={detailsBottomSheetRef}
@@ -347,8 +504,18 @@ export function DeliveryScreen() {
               header: "Excluir",
               accessor: "actions",
               flex: 1,
-              render: () => (
-                <TouchableOpacity>
+              render: (item) => (
+                <TouchableOpacity
+                  onPress={() =>
+                    setDeleteModal({
+                      id: item.id,
+                      numero: item.numero,
+                      ocorrencia: item.ocorrencia,
+                      data: item.data,
+                      hora: item.hora,
+                    })
+                  }
+                >
                   <Trash2 width={18} height={18} color="#ff0000" />
                 </TouchableOpacity>
               ),
@@ -399,7 +566,7 @@ export function DeliveryScreen() {
         {isBottomSheetOpen && (
           <BottomSheet
             ref={bottomSheetRef}
-            snapPoints={snapPoints}
+            snapPoints={["25%", "75%", "100%"]}
             enablePanDownToClose={true}
             onClose={() => {
               setIsBottomSheetOpen(false);
@@ -407,174 +574,251 @@ export function DeliveryScreen() {
               setLoteDocs([]);
               setLoteFretes([]);
             }}
+            index={
+              selectedOcorrencia === "Entrega realizado normalmente" ? 2 : 1
+            }
           >
             <BottomSheetView className="flex-1 p-4">
-              <H4 className="mb-4">Lançar Ocorrência</H4>
-              {isLote && loteDocs.length > 0 && (
+              <ScrollView
+                showsVerticalScrollIndicator={true}
+                contentContainerStyle={{ paddingBottom: 50 }}
+                style={{ flex: 1 }}
+              >
+                <H4 className="mb-4">Lançar Ocorrência</H4>
+                {isLote && loteDocs.length > 0 && (
+                  <View className="mb-4">
+                    <P className="mb-2 font-bold text-blue-900">
+                      Ocorrência em lote para os documentos/fretes:
+                    </P>
+                    <P className="text-xs text-blue-900">
+                      {loteDocs.map(
+                        (doc, idx) =>
+                          ` Doc: ${doc} - Frete: ${loteFretes[idx]} | `,
+                      )}
+                    </P>
+                  </View>
+                )}
+
                 <View className="mb-4">
-                  <P className="mb-2 font-bold text-blue-900">
-                    Ocorrência em lote para os documentos/fretes:
-                  </P>
-                  <P className="text-xs text-blue-900">
-                    {loteDocs.map(
-                      (doc, idx) =>
-                        ` Doc: ${doc} - Frete: ${loteFretes[idx]} | `,
-                    )}
-                  </P>
+                  <P className="mb-2">Documento / NF:</P>
+                  <TextInput
+                    className="h-12 rounded-lg border border-gray-300 px-4"
+                    value={isLote ? loteDocs.join(", ") : documento}
+                    editable={false}
+                    onChangeText={setDocumento}
+                    keyboardType="numeric"
+                  />
                 </View>
-              )}
 
-              <View className="mb-4">
-                <P className="mb-2">Documento / NF:</P>
-                <TextInput
-                  className="h-12 rounded-lg border border-gray-300 px-4"
-                  value={isLote ? loteDocs.join(", ") : documento}
-                  editable={false}
-                  onChangeText={setDocumento}
-                  keyboardType="numeric"
-                />
-              </View>
+                <View className="mb-4">
+                  <P className="mb-2">Frete:</P>
+                  <TextInput
+                    className="h-12 rounded-lg border border-gray-300 px-4"
+                    value={isLote ? loteFretes.join(", ") : frete}
+                    onChangeText={setFrete}
+                    editable={false}
+                    keyboardType="numeric"
+                  />
+                </View>
 
-              <View className="mb-4">
-                <P className="mb-2">Frete:</P>
-                <TextInput
-                  className="h-12 rounded-lg border border-gray-300 px-4"
-                  value={isLote ? loteFretes.join(", ") : frete}
-                  onChangeText={setFrete}
-                  editable={false}
-                  keyboardType="numeric"
-                />
-              </View>
+                <View className="mb-4">
+                  <P className="mb-2">Ocorrência:</P>
+                  <Pressable
+                    className="h-12 justify-center rounded-lg border border-gray-300 px-4"
+                    style={{ position: "relative" }}
+                    onPress={() => setIsOcorrenciaSheetOpen(true)}
+                  >
+                    <P style={{ paddingRight: 32 }}>
+                      {selectedOcorrencia || "Selecione uma ocorrência"}
+                    </P>
+                    <View
+                      style={{
+                        position: "absolute",
+                        right: 12,
+                        top: "50%",
+                        transform: [{ translateY: -12 }],
+                      }}
+                    >
+                      <ChevronDown />
+                    </View>
+                  </Pressable>
+                </View>
 
-              <View className="mb-4">
-                <P className="mb-2">Ocorrência:</P>
-                <Pressable
-                  className="h-12 justify-center rounded-lg border border-gray-300 px-4"
-                  style={{ position: "relative" }}
-                  onPress={() => setIsOcorrenciaSheetOpen(true)}
-                >
-                  <P style={{ paddingRight: 32 }}>
-                    {selectedOcorrencia || "Selecione uma ocorrência"}
-                  </P>
-                  <View
-                    style={{
-                      position: "absolute",
-                      right: 12,
-                      top: "50%",
-                      transform: [{ translateY: -12 }],
+                <View className="mb-4">
+                  <P className="mb-2">Data da ocorrência:</P>
+                  <TouchableOpacity
+                    onPress={() => setShowDatePicker(true)}
+                    activeOpacity={0.7}
+                  >
+                    <TextInput
+                      className="h-12 rounded-lg border border-gray-300 px-4"
+                      value={data ? data.split("-").reverse().join("/") : ""}
+                      editable={false}
+                      placeholder="DD/MM/AAAA"
+                      pointerEvents="none"
+                    />
+                  </TouchableOpacity>
+                  <CustomDateTimePicker
+                    visible={showDatePicker}
+                    mode="date"
+                    onConfirm={(date) => {
+                      setShowDatePicker(false);
+                      // Salve no formato YYYY-MM-DD
+                      const formatted = date.toISOString().split("T")[0];
+                      setData(formatted);
+                    }}
+                    onCancel={() => setShowDatePicker(false)}
+                    initialDate={
+                      data
+                        ? (() => {
+                            // data está em YYYY-MM-DD
+                            const [y, m, d] = data.split("-");
+                            return new Date(`${y}-${m}-${d}`);
+                          })()
+                        : undefined
+                    }
+                  />
+                </View>
+
+                <View className="mb-4">
+                  <P className="mb-2">Hora da ocorrência:</P>
+                  <TouchableOpacity
+                    onPress={() => setShowTimePicker(true)}
+                    activeOpacity={0.7}
+                  >
+                    <TextInput
+                      className="h-12 rounded-lg border border-gray-300 px-4"
+                      value={hora}
+                      editable={false}
+                      placeholder="HH:MM"
+                      pointerEvents="none"
+                    />
+                  </TouchableOpacity>
+                  <CustomDateTimePicker
+                    visible={showTimePicker}
+                    mode="time"
+                    onConfirm={(date) => {
+                      setShowTimePicker(false);
+                      // Formatar para HH:MM
+                      const formatted = date.toTimeString().slice(0, 5);
+                      setHora(formatted);
+                    }}
+                    onCancel={() => setShowTimePicker(false)}
+                    initialDate={
+                      hora
+                        ? (() => {
+                            const [h, m] = hora.split(":");
+                            const d = new Date();
+                            d.setHours(Number(h));
+                            d.setMinutes(Number(m));
+                            d.setSeconds(0);
+                            d.setMilliseconds(0);
+                            return d;
+                          })()
+                        : undefined
+                    }
+                  />
+                </View>
+
+                <View className="mb-4">
+                  <P className="mb-2">Observação:</P>
+                  <TextInput
+                    className="h-24 rounded-lg border border-gray-300 px-4 py-2"
+                    value={observacao}
+                    onChangeText={setObservacao}
+                    multiline
+                    numberOfLines={4}
+                    textAlignVertical="top"
+                  />
+                </View>
+
+                {selectedOcorrencia === "Entrega realizado normalmente" && (
+                  <>
+                    <View className="mb-4">
+                      <P className="mb-2">Recebedor:</P>
+                      <TextInput
+                        className="h-12 rounded-lg border border-gray-300 px-4"
+                        value={recebedor}
+                        onChangeText={setRecebedor}
+                        placeholder="Digite o nome do recebedor"
+                      />
+                    </View>
+                    <View className="mb-4">
+                      <P className="mb-2">Documento do Recebedor:</P>
+                      <TextInput
+                        className="h-12 rounded-lg border border-gray-300 px-4"
+                        value={documentoRecebedor}
+                        onChangeText={setDocumentoRecebedor}
+                        placeholder="Digite o documento do recebedor"
+                      />
+                    </View>
+                    <View className="mb-4">
+                      <P className="mb-2">Tipo de Recebedor:</P>
+                      <Pressable
+                        className="h-12 justify-center rounded-lg border border-gray-300 px-4"
+                        style={{ position: "relative" }}
+                        onPress={() => setIsTipoRecebedorSheetOpen(true)}
+                      >
+                        <P style={{ paddingRight: 32 }}>
+                          {idTipoRecebedor
+                            ? tipoRecebedorOptions.find(
+                                (opt) => opt.id === idTipoRecebedor,
+                              )?.nome
+                            : "Selecione o tipo de recebedor"}
+                        </P>
+                        <View
+                          style={{
+                            position: "absolute",
+                            right: 12,
+                            top: "50%",
+                            transform: [{ translateY: -12 }],
+                          }}
+                        >
+                          <ChevronDown />
+                        </View>
+                      </Pressable>
+                    </View>
+                    <View className="mb-4 flex-row items-center">
+                      <Pressable
+                        onPress={handleSelectFile}
+                        style={{
+                          borderWidth: 2,
+                          borderColor: "red",
+                          backgroundColor: "#f5f5f5",
+                          paddingHorizontal: 8,
+                          paddingVertical: 4,
+                          borderRadius: 4,
+                          marginRight: 8,
+                        }}
+                      >
+                        <P style={{ color: "#222", fontWeight: "bold" }}>
+                          Escolher Ficheiros
+                        </P>
+                      </Pressable>
+                      <P style={{ color: "#222" }}>
+                        {comprovante
+                          ? comprovante.name
+                          : "Nenhum ficheiro selecionado"}
+                      </P>
+                    </View>
+                  </>
+                )}
+
+                <View className="flex-row justify-between gap-4">
+                  <BackButton
+                    className="flex-1"
+                    onPress={() => {
+                      bottomSheetRef.current?.close();
+                      setIsBottomSheetOpen(false);
                     }}
                   >
-                    <ChevronDown />
-                  </View>
-                </Pressable>
-              </View>
-
-              <View className="mb-4">
-                <P className="mb-2">Data da ocorrência:</P>
-                <TouchableOpacity
-                  onPress={() => setShowDatePicker(true)}
-                  activeOpacity={0.7}
-                >
-                  <TextInput
-                    className="h-12 rounded-lg border border-gray-300 px-4"
-                    value={data}
-                    editable={false}
-                    placeholder="DD/MM/AAAA"
-                    pointerEvents="none"
-                  />
-                </TouchableOpacity>
-                <CustomDateTimePicker
-                  visible={showDatePicker}
-                  mode="date"
-                  onConfirm={(date) => {
-                    setShowDatePicker(false);
-                    // Formatar para DD/MM/AAAA
-                    const formatted = date
-                      .toISOString()
-                      .split("T")[0]
-                      .split("-")
-                      .reverse()
-                      .join("/");
-                    setData(formatted);
-                  }}
-                  onCancel={() => setShowDatePicker(false)}
-                  initialDate={
-                    data
-                      ? (() => {
-                          const [d, m, y] = data.split("/");
-                          return new Date(`${y}-${m}-${d}`);
-                        })()
-                      : undefined
-                  }
-                />
-              </View>
-
-              <View className="mb-4">
-                <P className="mb-2">Hora da ocorrência:</P>
-                <TouchableOpacity
-                  onPress={() => setShowTimePicker(true)}
-                  activeOpacity={0.7}
-                >
-                  <TextInput
-                    className="h-12 rounded-lg border border-gray-300 px-4"
-                    value={hora}
-                    editable={false}
-                    placeholder="HH:MM"
-                    pointerEvents="none"
-                  />
-                </TouchableOpacity>
-                <CustomDateTimePicker
-                  visible={showTimePicker}
-                  mode="time"
-                  onConfirm={(date) => {
-                    setShowTimePicker(false);
-                    // Formatar para HH:MM
-                    const formatted = date.toTimeString().slice(0, 5);
-                    setHora(formatted);
-                  }}
-                  onCancel={() => setShowTimePicker(false)}
-                  initialDate={
-                    hora
-                      ? (() => {
-                          const [h, m] = hora.split(":");
-                          const d = new Date();
-                          d.setHours(Number(h));
-                          d.setMinutes(Number(m));
-                          d.setSeconds(0);
-                          d.setMilliseconds(0);
-                          return d;
-                        })()
-                      : undefined
-                  }
-                />
-              </View>
-
-              <View className="mb-4">
-                <P className="mb-2">Observação:</P>
-                <TextInput
-                  className="h-24 rounded-lg border border-gray-300 px-4 py-2"
-                  value={observacao}
-                  onChangeText={setObservacao}
-                  multiline
-                  numberOfLines={4}
-                  textAlignVertical="top"
-                />
-              </View>
-
-              <View className="flex-row justify-between gap-4">
-                <BackButton
-                  className="flex-1"
-                  onPress={() => {
-                    bottomSheetRef.current?.close();
-                    setIsBottomSheetOpen(false);
-                  }}
-                >
-                  <P className="text-white">Voltar</P>
-                </BackButton>
-                <Button className="flex-1" onPress={handleSalvarOcorrencia}>
-                  <P className="text-white">Salvar</P>
-                </Button>
-              </View>
+                    <P className="text-white">Voltar</P>
+                  </BackButton>
+                  <Button className="flex-1" onPress={handleSalvarOcorrencia}>
+                    <P className="text-white">Salvar</P>
+                  </Button>
+                </View>
+              </ScrollView>
             </BottomSheetView>
           </BottomSheet>
         )}
@@ -594,7 +838,14 @@ export function DeliveryScreen() {
                     key={index}
                     className="border-b border-gray-200 py-4"
                     onPress={() => {
-                      setSelectedOcorrencia(ocorrencia);
+                      setSelectedOcorrencia(
+                        ocorrencia as
+                          | "Aguardado no local"
+                          | "Cliente recusou a entrega"
+                          | "Entrega cancelada pelo cliente"
+                          | "Entrega realizado normalmente"
+                          | "Em transito para entrega",
+                      );
                       setIsOcorrenciaSheetOpen(false);
                     }}
                   >
@@ -605,6 +856,114 @@ export function DeliveryScreen() {
             </BottomSheetView>
           </BottomSheet>
         )}
+
+        {isTipoRecebedorSheetOpen && (
+          <BottomSheet
+            snapPoints={["50%"]}
+            enablePanDownToClose={true}
+            onClose={() => setIsTipoRecebedorSheetOpen(false)}
+          >
+            <BottomSheetView className="flex-1 p-4">
+              <H4 className="mb-4">Selecione o Tipo de Recebedor</H4>
+
+              <View className="flex-1">
+                {tipoRecebedorOptions.map((opt) => (
+                  <Pressable
+                    key={opt.id}
+                    className="border-b border-gray-200 py-4"
+                    onPress={() => {
+                      setIdTipoRecebedor(opt.id);
+                      setIsTipoRecebedorSheetOpen(false);
+                    }}
+                  >
+                    <P>{opt.nome}</P>
+                  </Pressable>
+                ))}
+              </View>
+            </BottomSheetView>
+          </BottomSheet>
+        )}
+
+        {/* Modal de confirmação de exclusão */}
+        <CustomModal
+          visible={!!deleteModal}
+          onClose={() => setDeleteModal(null)}
+        >
+          <View style={{ gap: 12 }}>
+            <H4 style={{ color: "#222", textAlign: "center", marginBottom: 8 }}>
+              Excluir Ocorrência
+            </H4>
+            <View style={{ gap: 8 }}>
+              <P>Nº:</P>
+              <TextInput
+                value={deleteModal?.numero?.toString() || ""}
+                editable={false}
+                className="h-12 rounded-lg border border-gray-300 px-4"
+              />
+              <P>Ocorrência:</P>
+              <TextInput
+                value={deleteModal?.ocorrencia || ""}
+                editable={false}
+                className="h-12 rounded-lg border border-gray-300 px-4"
+              />
+              <P>Data Ocorrência:</P>
+              <TextInput
+                value={
+                  deleteModal?.data
+                    ? deleteModal.data.split("-").reverse().join("/")
+                    : ""
+                }
+                editable={false}
+                className="h-12 rounded-lg border border-gray-300 px-4"
+              />
+              <P>Hora Ocorrência:</P>
+              <TextInput
+                value={deleteModal?.hora || ""}
+                editable={false}
+                className="h-12 rounded-lg border border-gray-300 px-4"
+              />
+            </View>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "flex-end",
+                gap: 12,
+                marginTop: 16,
+              }}
+            >
+              <Button
+                onPress={() => handleDeleteOcorrencia(deleteModal?.id!)}
+                style={{
+                  backgroundColor: "#a5a5d6",
+                  borderRadius: 4,
+                  width: 80,
+                  height: 36,
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <P style={{ color: "#fff", fontWeight: "bold", fontSize: 16 }}>
+                  SIM
+                </P>
+              </Button>
+              <Button
+                onPress={() => setDeleteModal(null)}
+                style={{
+                  backgroundColor: "#1e3a8a",
+                  borderRadius: 4,
+                  width: 80,
+                  height: 36,
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <P style={{ color: "#fff", fontWeight: "bold", fontSize: 16 }}>
+                  NÃO
+                </P>
+              </Button>
+            </View>
+          </View>
+        </CustomModal>
       </View>
     </ContainerAppCpX>
   );

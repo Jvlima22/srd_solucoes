@@ -8,6 +8,7 @@ import {
   TextInput,
   View,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import React, {
   useEffect,
@@ -20,6 +21,7 @@ import {
   getInfoTransferencia,
   getDetalhesTransferencia,
   updateOcorrenciaTransferencia,
+  deleteOcorrenciaTransferencia,
 } from "@/service/services";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import { useRoute, RouteProp } from "@react-navigation/native";
@@ -32,6 +34,7 @@ import {
   GenericListCard,
   GenericListCardConfigs,
 } from "@components/GenericListCard";
+import { CustomModal } from "@components/CustomModal";
 
 type TransferScreenParams = {
   manifestoId: string;
@@ -55,7 +58,12 @@ export function TransferScreen() {
   // Estados para o lançamento de ocorrência
   const bottomSheetRef = useRef<BottomSheet>(null);
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
-  const [selectedOcorrencia, setSelectedOcorrencia] = useState("");
+  const [selectedOcorrencia, setSelectedOcorrencia] = useState<
+    | "transferencia cancelada"
+    | "transferencia realizada"
+    | "em transito para unidade de destino"
+    | ""
+  >("");
   const [isOcorrenciaSheetOpen, setIsOcorrenciaSheetOpen] = useState(false);
   const [data, setData] = useState("");
   const [hora, setHora] = useState("");
@@ -64,9 +72,9 @@ export function TransferScreen() {
   const snapPoints = useMemo(() => ["25%", "50%", "100%"], []);
 
   const ocorrencias = [
-    "Transferência cancelada",
-    "Filial",
-    "Transferência realizada normalmente",
+    "transferencia cancelada",
+    "transferencia realizada",
+    "em transito para unidade de destino",
   ];
 
   const [selectedDocumentos, setSelectedDocumentos] = useState<string[]>([]);
@@ -88,6 +96,15 @@ export function TransferScreen() {
   >(null);
   const [detalhesLoading, setDetalhesLoading] = useState(false);
   const [detailsSheetIndex, setDetailsSheetIndex] = useState(-1);
+
+  // Estado para modal de exclusão
+  const [deleteModal, setDeleteModal] = useState<null | {
+    id: number;
+    documento: number;
+    ocorrencia: string;
+    data: string;
+    hora: string;
+  }>(null);
 
   const fetchData = useCallback(async () => {
     if (!manifestoId) {
@@ -176,20 +193,38 @@ export function TransferScreen() {
       }
       if (isLote && loteTransferencias.length > 0) {
         for (let i = 0; i < loteTransferencias.length; i++) {
-          await updateOcorrenciaTransferencia(Number(loteTransferencias[i]), {
+          await updateOcorrenciaTransferencia(
+            Number(loteTransferencias[i]),
+            Number(loteFretes[i]),
+            {
+              data_ocorrencia: data,
+              hora_ocorrencia: hora,
+              observacao: observacao,
+              ocorrencia: selectedOcorrencia,
+            },
+          );
+        }
+      } else {
+        // Para ocorrência individual, precisamos do freteId do item selecionado
+        const selectedItem = entregas.find(
+          (item) => String(item.transferencia) === minutaNumero,
+        );
+
+        if (!selectedItem) {
+          alert("Item não encontrado");
+          return;
+        }
+
+        await updateOcorrenciaTransferencia(
+          Number(minutaNumero),
+          selectedItem.frete,
+          {
             data_ocorrencia: data,
             hora_ocorrencia: hora,
             observacao: observacao,
             ocorrencia: selectedOcorrencia,
-          });
-        }
-      } else {
-        await updateOcorrenciaTransferencia(Number(minutaNumero), {
-          data_ocorrencia: data,
-          hora_ocorrencia: hora,
-          observacao: observacao,
-          ocorrencia: selectedOcorrencia,
-        });
+          },
+        );
       }
       await fetchData();
       bottomSheetRef.current?.close();
@@ -210,7 +245,6 @@ export function TransferScreen() {
   };
 
   const handleOpenDetalhes = async (item: transferenciaDTO) => {
-    console.log("Abrindo detalhes", item);
     setSelectedItem(item);
     setIsDetailsSheetOpen(true);
     setDetailsSheetIndex(1);
@@ -219,13 +253,73 @@ export function TransferScreen() {
     try {
       const response = await getDetalhesTransferencia(
         String(item.transferencia),
+        String(item.frete),
       );
-      setDetalhesTransferencia(response.data);
+      // Ajuste: se vier response.data.detalhes, use esse array
+      const detalhes = Array.isArray(response.data.detalhes)
+        ? response.data.detalhes
+        : response.data?.detalhes
+          ? [response.data.detalhes]
+          : [];
+      setDetalhesTransferencia(detalhes);
     } catch {
       alert("Não foi possível carregar os detalhes da transferência.");
       setDetailsSheetIndex(-1);
     } finally {
       setDetalhesLoading(false);
+    }
+  };
+
+  // Função para excluir ocorrência
+  const handleDeleteOcorrencia = async (ocorrenciaId: number) => {
+    try {
+      // Confirmação antes de excluir
+      const confirmed = await new Promise<boolean>((resolve) => {
+        Alert.alert(
+          "Confirmar Exclusão",
+          "Tem certeza que deseja excluir esta ocorrência?",
+          [
+            {
+              text: "Cancelar",
+              style: "cancel",
+              onPress: () => resolve(false),
+            },
+            {
+              text: "Excluir",
+              style: "destructive",
+              onPress: () => resolve(true),
+            },
+          ],
+        );
+      });
+
+      if (!confirmed) return;
+
+      // Chama a API para excluir
+      await deleteOcorrenciaTransferencia(ocorrenciaId.toString());
+
+      // Recarrega os detalhes da transferência
+      if (selectedItem) {
+        const response = await getDetalhesTransferencia(
+          String(selectedItem.transferencia),
+          String(selectedItem.frete),
+        );
+        // Ajuste: se vier response.data.detalhes, use esse array
+        const detalhes = Array.isArray(response.data.detalhes)
+          ? response.data.detalhes
+          : response.data?.detalhes
+            ? [response.data.detalhes]
+            : [];
+        setDetalhesTransferencia(detalhes);
+      }
+
+      Alert.alert("Sucesso", "Ocorrência excluída com sucesso!");
+    } catch (error) {
+      console.error("Erro ao excluir ocorrência:", error);
+      Alert.alert(
+        "Erro",
+        "Erro ao excluir ocorrência. Por favor, tente novamente.",
+      );
     }
   };
 
@@ -310,30 +404,22 @@ export function TransferScreen() {
           isOpen={isDetailsSheetOpen}
           onClose={() => {
             setIsDetailsSheetOpen(false);
-            setDetalhesTransferencia(null);
             setDetailsSheetIndex(-1);
           }}
           bottomSheetRef={detailsBottomSheetRef}
           title="Detalhes da transferência"
           primaryFields={[
             {
-              label: "Romaneio de Transferência",
-              value:
-                (detalhesTransferencia &&
-                  detalhesTransferencia[0]?.["Romaneio de transferencia"]) ||
-                selectedItem?.transferencia ||
-                "",
+              label: "Número da Transferência",
+              value: selectedItem?.transferencia || "",
             },
             {
               label: "Frete",
-              value:
-                (detalhesTransferencia && detalhesTransferencia[0]?.frete) ||
-                selectedItem?.frete ||
-                "",
+              value: selectedItem?.frete || "",
             },
           ]}
           columns={[
-            { header: "Doc N°", accessor: "documento", flex: 1 },
+            { header: "Documento", accessor: "documento", flex: 1.5 },
             { header: "Ocorrência", accessor: "ocorrencia", flex: 2 },
             {
               header: "Data",
@@ -341,7 +427,12 @@ export function TransferScreen() {
               flex: 1.5,
               render: (item) => (
                 <P style={{ textAlign: "center", color: "#222" }}>
-                  {item.data ? item.data : "N/A"}
+                  {/* Aceita data em formato YYYY-MM-DD ou DD/MM/YYYY */}
+                  {item.data
+                    ? /\d{4}-\d{2}-\d{2}/.test(item.data)
+                      ? item.data.split("-").reverse().join("/")
+                      : item.data
+                    : ""}
                 </P>
               ),
             },
@@ -359,8 +450,18 @@ export function TransferScreen() {
               header: "Excluir",
               accessor: "actions",
               flex: 1,
-              render: () => (
-                <TouchableOpacity>
+              render: (item) => (
+                <TouchableOpacity
+                  onPress={() =>
+                    setDeleteModal({
+                      id: item.id,
+                      documento: item.documento,
+                      ocorrencia: item.ocorrencia,
+                      data: item.data,
+                      hora: item.hora,
+                    })
+                  }
+                >
                   <Trash2 width={18} height={18} color="#ff0000" />
                 </TouchableOpacity>
               ),
@@ -456,7 +557,7 @@ export function TransferScreen() {
                   >
                     <TextInput
                       className="h-12 rounded-lg border border-gray-300 px-4"
-                      value={data}
+                      value={data ? data.split("-").reverse().join("/") : ""}
                       editable={false}
                       placeholder="DD/MM/AAAA"
                       pointerEvents="none"
@@ -467,20 +568,16 @@ export function TransferScreen() {
                     mode="date"
                     onConfirm={(date) => {
                       setShowDatePicker(false);
-                      // Formatar para DD/MM/AAAA
-                      const formatted = date
-                        .toISOString()
-                        .split("T")[0]
-                        .split("-")
-                        .reverse()
-                        .join("/");
+                      // Salve no formato YYYY-MM-DD
+                      const formatted = date.toISOString().split("T")[0];
                       setData(formatted);
                     }}
                     onCancel={() => setShowDatePicker(false)}
                     initialDate={
                       data
                         ? (() => {
-                            const [d, m, y] = data.split("/");
+                            // data está em YYYY-MM-DD
+                            const [y, m, d] = data.split("-");
                             return new Date(`${y}-${m}-${d}`);
                           })()
                         : undefined
@@ -574,7 +671,13 @@ export function TransferScreen() {
                     key={index}
                     className="border-b border-gray-200 py-4"
                     onPress={() => {
-                      setSelectedOcorrencia(ocorrencia);
+                      setSelectedOcorrencia(
+                        ocorrencia as
+                          | "transferencia cancelada"
+                          | "transferencia realizada"
+                          | "em transito para unidade de destino"
+                          | "",
+                      );
                       setIsOcorrenciaSheetOpen(false);
                     }}
                   >
@@ -585,6 +688,87 @@ export function TransferScreen() {
             </BottomSheetView>
           </BottomSheet>
         )}
+
+        {/* Modal de confirmação de exclusão */}
+        <CustomModal
+          visible={!!deleteModal}
+          onClose={() => setDeleteModal(null)}
+        >
+          <View style={{ gap: 12 }}>
+            <H4 style={{ color: "#222", textAlign: "center", marginBottom: 8 }}>
+              Excluir Ocorrência
+            </H4>
+            <View style={{ gap: 8 }}>
+              <P>Documento:</P>
+              <TextInput
+                value={deleteModal?.documento?.toString() || ""}
+                editable={false}
+                className="h-12 rounded-lg border border-gray-300 px-4"
+              />
+              <P>Ocorrência:</P>
+              <TextInput
+                value={deleteModal?.ocorrencia || ""}
+                editable={false}
+                className="h-12 rounded-lg border border-gray-300 px-4"
+              />
+              <P>Data Ocorrência:</P>
+              <TextInput
+                value={
+                  deleteModal?.data
+                    ? deleteModal.data.split("-").reverse().join("/")
+                    : ""
+                }
+                editable={false}
+                className="h-12 rounded-lg border border-gray-300 px-4"
+              />
+              <P>Hora Ocorrência:</P>
+              <TextInput
+                value={deleteModal?.hora || ""}
+                editable={false}
+                className="h-12 rounded-lg border border-gray-300 px-4"
+              />
+            </View>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "flex-end",
+                gap: 12,
+                marginTop: 16,
+              }}
+            >
+              <Button
+                onPress={() => handleDeleteOcorrencia(deleteModal?.id!)}
+                style={{
+                  backgroundColor: "#a5a5d6",
+                  borderRadius: 4,
+                  width: 80,
+                  height: 36,
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <P style={{ color: "#fff", fontWeight: "bold", fontSize: 16 }}>
+                  SIM
+                </P>
+              </Button>
+              <Button
+                onPress={() => setDeleteModal(null)}
+                style={{
+                  backgroundColor: "#1e3a8a",
+                  borderRadius: 4,
+                  width: 80,
+                  height: 36,
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <P style={{ color: "#fff", fontWeight: "bold", fontSize: 16 }}>
+                  NÃO
+                </P>
+              </Button>
+            </View>
+          </View>
+        </CustomModal>
       </View>
     </ContainerAppCpX>
   );

@@ -91,6 +91,50 @@ export function ManifestScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
 
+  // Lista de ocorrências que tornam o botão inativo
+  const ocorrenciasInativas = [
+    "Entrega realizado normalmente",
+    "Coleta realizado normalmente",
+    "Despacho realizado",
+    "Retirada realizada",
+    "Transferencia realizada",
+  ];
+
+  // Função auxiliar para determinar o texto do botão baseado no status da operação e ocorrência
+  const getButtonText = (operationStatus: string, ocorrencia?: string) => {
+    // Se a ocorrência for inativa, exibe "Inativo"
+    if (ocorrencia && ocorrenciasInativas.includes(ocorrencia)) {
+      return "Inativo";
+    }
+
+    if (!operationStatus || operationStatus === "0 / 0") {
+      return "Inativo";
+    }
+
+    const [total, completed] = operationStatus.split(" / ").map(Number);
+
+    if (completed < total) {
+      return "Baixar";
+    } else {
+      return "Inativo";
+    }
+  };
+
+  // Função auxiliar para determinar se o botão deve estar desabilitado
+  const isButtonDisabled = (operationStatus: string, ocorrencia?: string) => {
+    // Se a ocorrência for inativa, desabilita o botão
+    if (ocorrencia && ocorrenciasInativas.includes(ocorrencia)) {
+      return true;
+    }
+
+    if (!operationStatus || operationStatus === "0 / 0") {
+      return true;
+    }
+
+    const [total, completed] = operationStatus.split(" / ").map(Number);
+    return completed >= total; // Inativo quando completed >= total (concluído)
+  };
+
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -293,8 +337,11 @@ export function ManifestScreen() {
                         handleNavigateToScreen("entrega", item.id_manifesto)
                       }
                       style={{ backgroundColor: "#439943" }}
+                      disabled={isButtonDisabled(item.entrega)}
                     >
-                      <P className="text-xs text-white">Baixar</P>
+                      <P className="text-xs text-white">
+                        {getButtonText(item.entrega)}
+                      </P>
                     </Button>
                     <Image source={ArrowRight} className="h-7 w-7" />
 
@@ -308,8 +355,11 @@ export function ManifestScreen() {
                         handleNavigateToScreen("coleta", item.id_manifesto)
                       }
                       style={{ backgroundColor: "#ED9C2A" }}
+                      disabled={isButtonDisabled(item.coleta)}
                     >
-                      <P className="text-xs text-white">Baixar</P>
+                      <P className="text-xs text-white">
+                        {getButtonText(item.coleta)}
+                      </P>
                     </Button>
                     <Image source={ArrowLeft} className="h-7 w-7" />
 
@@ -323,8 +373,11 @@ export function ManifestScreen() {
                         handleNavigateToScreen("despacho", item.id_manifesto)
                       }
                       style={{ backgroundColor: "#2E6EA5" }}
+                      disabled={isButtonDisabled(item.despacho)}
                     >
-                      <P className="text-xs text-white">Baixar</P>
+                      <P className="text-xs text-white">
+                        {getButtonText(item.despacho)}
+                      </P>
                     </Button>
                     <Image source={ArrowUp} className="h-7 w-7" />
 
@@ -338,8 +391,11 @@ export function ManifestScreen() {
                         handleNavigateToScreen("retirada", item.id_manifesto)
                       }
                       style={{ backgroundColor: "#28A4C9" }}
+                      disabled={isButtonDisabled(item.retirada)}
                     >
-                      <P className="text-xs text-white">Baixar</P>
+                      <P className="text-xs text-white">
+                        {getButtonText(item.retirada)}
+                      </P>
                     </Button>
                     <Image source={ArrowDown} className="h-7 w-7" />
 
@@ -356,8 +412,11 @@ export function ManifestScreen() {
                         )
                       }
                       style={{ backgroundColor: "#EEEEEE" }}
+                      disabled={isButtonDisabled(item.transferencia)}
                     >
-                      <P className="text-xs text-black">Baixar</P>
+                      <P className="text-xs text-black">
+                        {getButtonText(item.transferencia)}
+                      </P>
                     </Button>
                     <Image source={CurvedArrow} className="h-7 w-7" />
 

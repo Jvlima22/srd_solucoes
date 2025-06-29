@@ -19,6 +19,14 @@ const ROUTE_PATH_TRANSFERENCIA = "/info-transferencia";
 const ROUTE_PATH_MANIFEST = "/manifestos";
 const ROUTE_PATH_OCORRENCIA_ENTREGA = "/ocorrencia/entrega";
 const ROUTE_PATH_OCORRENCIA_COLETA = "/ocorrencia/coleta";
+const ROUTE_PATH_OCORRENCIA_RETIRADA = "/ocorrencia/retirada";
+const ROUTE_PATH_OCORRENCIA_TRANSFERENCIA = "/ocorrencia/transferencia";
+const ROUTE_PATH_OCORRENCIA_DESPACHO = "/ocorrencia/despacho";
+const ROUTE_PATH_DETALHES_ENTREGA = "/detalhes/entrega";
+const ROUTE_PATH_DETALHES_COLETA = "/detalhes/coleta";
+const ROUTE_PATH_DETALHES_RETIRADA = "/detalhes/retirada";
+const ROUTE_PATH_DETALHES_TRANSFERENCIA = "/detalhes/transferencia";
+const ROUTE_PATH_DETALHES_DESPACHO = "/detalhes/despacho";
 
 const auth_login = async (unidade: string, login: string, senha: string) => {
   if (DEV) {
@@ -177,14 +185,68 @@ const getInfoManifest = async (): Promise<AxiosResponse<manifestDTO[]>> => {
   return await api.get<manifestDTO[]>(ROUTE_PATH_MANIFEST);
 };
 
+// Tipos para as ocorrências baseados no servidor
+type OcorrenciaEntregaData = {
+  ocorrencia:
+    | "Aguardado no local"
+    | "Cliente recusou a entrega"
+    | "Em transito para entrega"
+    | "Entrega cancelada pelo cliente"
+    | "Entrega realizado normalmente";
+  data_ocorrencia: string;
+  hora_ocorrencia: string;
+  observacao?: string;
+  recebedor?: string;
+  documento_recebedor?: string;
+  id_tipo_recebedor?: number;
+};
+
+type OcorrenciaColetaData = {
+  ocorrencia:
+    | "Coleta cancelada"
+    | "Em transito para coleta"
+    | "Coleta realizado normalmente";
+  data_ocorrencia: string;
+  hora_ocorrencia: string;
+  observacao?: string;
+  recebedor?: string;
+  documento_recebedor?: string;
+  id_tipo_recebedor?: number;
+};
+
+type OcorrenciaRetiradaData = {
+  ocorrencia:
+    | "retirada realizada"
+    | "retira cancelada"
+    | "em transito para retirada";
+  data_ocorrencia: string;
+  hora_ocorrencia: string;
+  observacao?: string;
+};
+
+type OcorrenciaTransferenciaData = {
+  ocorrencia:
+    | "transferencia cancelada"
+    | "transferencia realizada"
+    | "em transito para unidade de destino";
+  data_ocorrencia: string;
+  hora_ocorrencia: string;
+  observacao?: string;
+};
+
+type OcorrenciaDespachoData = {
+  ocorrencia:
+    | "despacho cancelado"
+    | "em transito para despacho"
+    | "despacho realizado";
+  data_ocorrencia: string;
+  hora_ocorrencia: string;
+  observacao?: string;
+};
+
 const updateOcorrenciaEntrega = async (
-  documentoId: number,
-  data: {
-    data_ocorrencia: string;
-    hora_ocorrencia: string;
-    observacao: string;
-    ocorrencia: string;
-  },
+  freteId: number,
+  data: OcorrenciaEntregaData | FormData,
 ): Promise<AxiosResponse> => {
   if (DEV) {
     console.log("Mocking API response");
@@ -197,17 +259,20 @@ const updateOcorrenciaEntrega = async (
     return response as AxiosResponse;
   }
 
-  return await api.put(`${ROUTE_PATH_OCORRENCIA_ENTREGA}/${documentoId}`, data);
+  if (data instanceof FormData) {
+    return await api.put(`${ROUTE_PATH_OCORRENCIA_ENTREGA}/${freteId}`, data, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+  }
+
+  return await api.put(`${ROUTE_PATH_OCORRENCIA_ENTREGA}/${freteId}`, data);
 };
 
 const updateOcorrenciaColeta = async (
-  coletaNumero: number,
-  data: {
-    data_ocorrencia: string;
-    hora_ocorrencia: string;
-    observacao: string;
-    ocorrencia: string;
-  },
+  coletaId: number,
+  data: OcorrenciaColetaData | FormData,
 ): Promise<AxiosResponse> => {
   if (DEV) {
     console.log("Mocking API response");
@@ -220,17 +285,20 @@ const updateOcorrenciaColeta = async (
     return response as AxiosResponse;
   }
 
-  return await api.put(`${ROUTE_PATH_OCORRENCIA_COLETA}/${coletaNumero}`, data);
+  if (data instanceof FormData) {
+    return await api.put(`${ROUTE_PATH_OCORRENCIA_COLETA}/${coletaId}`, data, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+  }
+
+  return await api.put(`${ROUTE_PATH_OCORRENCIA_COLETA}/${coletaId}`, data);
 };
 
 const updateOcorrenciaRetirada = async (
   retiradaId: number,
-  data: {
-    data_ocorrencia: string;
-    hora_ocorrencia: string;
-    observacao: string;
-    ocorrencia: string;
-  },
+  data: OcorrenciaRetiradaData,
 ): Promise<AxiosResponse> => {
   if (DEV) {
     console.log("Mocking API response");
@@ -243,17 +311,13 @@ const updateOcorrenciaRetirada = async (
     return response as AxiosResponse;
   }
 
-  return await api.put(`/ocorrencia/retirada/${retiradaId}`, data);
+  return await api.put(`${ROUTE_PATH_OCORRENCIA_RETIRADA}/${retiradaId}`, data);
 };
 
 const updateOcorrenciaTransferencia = async (
   transferenciaId: number,
-  data: {
-    data_ocorrencia: string;
-    hora_ocorrencia: string;
-    observacao: string;
-    ocorrencia: string;
-  },
+  freteId: number,
+  data: OcorrenciaTransferenciaData,
 ): Promise<AxiosResponse> => {
   if (DEV) {
     console.log("Mocking API response");
@@ -266,21 +330,56 @@ const updateOcorrenciaTransferencia = async (
     return response as AxiosResponse;
   }
 
-  return await api.put(`/ocorrencia/transferencia/${transferenciaId}`, data);
+  return await api.put(
+    `${ROUTE_PATH_OCORRENCIA_TRANSFERENCIA}/${transferenciaId}/${freteId}`,
+    data,
+  );
 };
 
-export async function updateOcorrenciaDespacho(minutaId: number, payload: any) {
-  try {
-    const response = await api.put(`/ocorrencia/despacho/${minutaId}`, payload);
-    return response;
-  } catch (error) {
-    throw error;
+const updateOcorrenciaDespacho = async (
+  despachoId: number,
+  data: OcorrenciaDespachoData,
+): Promise<AxiosResponse> => {
+  if (DEV) {
+    console.log("Mocking API response");
+    const response = {
+      data: { message: "Ocorrência atualizada com sucesso" },
+      status: 200,
+      statusText: "OK",
+    };
+    await new Promise((resolve) => setTimeout(resolve, timeout));
+    return response as AxiosResponse;
   }
-}
 
-export const getDetalhesEntrega = async (freteId: string) => {
+  return await api.put(`${ROUTE_PATH_OCORRENCIA_DESPACHO}/${despachoId}`, data);
+};
+
+const getDetalhesEntrega = async (freteId: string): Promise<AxiosResponse> => {
+  if (DEV) {
+    console.log("Mocking API response");
+    const response = {
+      data: {
+        documento: "123456",
+        frete: freteId,
+        ocorrencias: [
+          {
+            numero: 1,
+            ocorrencia: "Entrega realizado normalmente",
+            data: "01/01/2024",
+            hora: "10:00",
+            excluir: true,
+          },
+        ],
+      },
+      status: 200,
+      statusText: "OK",
+    };
+    await new Promise((resolve) => setTimeout(resolve, timeout));
+    return response as AxiosResponse;
+  }
+
   try {
-    const response = await api.get(`/detalhes/entrega/${freteId}`);
+    const response = await api.get(`${ROUTE_PATH_DETALHES_ENTREGA}/${freteId}`);
     return response;
   } catch (error) {
     console.error("Erro ao buscar detalhes da entrega:", error);
@@ -288,9 +387,31 @@ export const getDetalhesEntrega = async (freteId: string) => {
   }
 };
 
-export const getDetalhesColeta = async (coletaId: string) => {
+const getDetalhesColeta = async (coletaId: string): Promise<AxiosResponse> => {
+  if (DEV) {
+    console.log("Mocking API response");
+    const response = {
+      data: {
+        "Numero da coleta": parseInt(coletaId),
+        ocorrencias: [
+          {
+            id: 1,
+            documentos: "DOC001, DOC002",
+            nome_ocorrencia: "Coleta realizado normalmente",
+            data_ocorrencia: "01/01/2024",
+            hora_ocorrencia: "10:00",
+          },
+        ],
+      },
+      status: 200,
+      statusText: "OK",
+    };
+    await new Promise((resolve) => setTimeout(resolve, timeout));
+    return response as AxiosResponse;
+  }
+
   try {
-    const response = await api.get(`/detalhes/coleta/${coletaId}`);
+    const response = await api.get(`${ROUTE_PATH_DETALHES_COLETA}/${coletaId}`);
     return response;
   } catch (error) {
     console.error("Erro ao buscar detalhes da coleta:", error);
@@ -298,9 +419,37 @@ export const getDetalhesColeta = async (coletaId: string) => {
   }
 };
 
-export const getDetalhesRetirada = async (retiradaId: string) => {
+const getDetalhesRetirada = async (
+  retiradaId: string,
+): Promise<AxiosResponse> => {
+  if (DEV) {
+    console.log("Mocking API response");
+    const response = {
+      data: {
+        numero_retirada: retiradaId,
+        detalhes: [
+          {
+            freteId: "123",
+            numero_retirada: retiradaId,
+            documento: "DOC001",
+            ocorrencia: "retirada realizada",
+            data: "01/01/2024",
+            hora: "10:00",
+            excluir: true,
+          },
+        ],
+      },
+      status: 200,
+      statusText: "OK",
+    };
+    await new Promise((resolve) => setTimeout(resolve, timeout));
+    return response as AxiosResponse;
+  }
+
   try {
-    const response = await api.get(`/detalhes/retirada/${retiradaId}`);
+    const response = await api.get(
+      `${ROUTE_PATH_DETALHES_RETIRADA}/${retiradaId}`,
+    );
     return response;
   } catch (error) {
     console.error("Erro ao buscar detalhes da retirada:", error);
@@ -308,10 +457,39 @@ export const getDetalhesRetirada = async (retiradaId: string) => {
   }
 };
 
-export const getDetalhesTransferencia = async (transferenciaId: string) => {
+const getDetalhesTransferencia = async (
+  transferenciaId: string,
+  freteId: string,
+): Promise<AxiosResponse> => {
+  if (DEV) {
+    console.log("Mocking API response");
+    const response = {
+      data: {
+        numero_transferencia: transferenciaId,
+        freteId: freteId,
+        detalhes: [
+          {
+            id: 136,
+            freteId: freteId,
+            numero_transferencia: transferenciaId,
+            documento: "DOC001",
+            ocorrencia: "transferencia realizada",
+            data: "01/01/2024",
+            hora: "10:00",
+            excluir: true,
+          },
+        ],
+      },
+      status: 200,
+      statusText: "OK",
+    };
+    await new Promise((resolve) => setTimeout(resolve, timeout));
+    return response as AxiosResponse;
+  }
+
   try {
     const response = await api.get(
-      `/detalhes/transferencia/${transferenciaId}`,
+      `${ROUTE_PATH_DETALHES_TRANSFERENCIA}/${transferenciaId}/${freteId}`,
     );
     return response;
   } catch (error) {
@@ -320,12 +498,165 @@ export const getDetalhesTransferencia = async (transferenciaId: string) => {
   }
 };
 
-export const getDetalhesDespacho = async (despachoId: string) => {
+const getDetalhesDespacho = async (
+  despachoId: string,
+): Promise<AxiosResponse> => {
+  if (DEV) {
+    console.log("Mocking API response");
+    const response = {
+      data: {
+        numero_minuta: "MIN001",
+        frete: despachoId,
+        ocorrencias: [
+          {
+            documento: "DOC001",
+            ocorrencia: "despacho realizado",
+            data: "01/01/2024",
+            hora: "10:00",
+            excluir: true,
+          },
+        ],
+      },
+      status: 200,
+      statusText: "OK",
+    };
+    await new Promise((resolve) => setTimeout(resolve, timeout));
+    return response as AxiosResponse;
+  }
+
   try {
-    const response = await api.get(`/detalhes/despacho/${despachoId}`);
+    const response = await api.get(
+      `${ROUTE_PATH_DETALHES_DESPACHO}/${despachoId}`,
+    );
     return response;
   } catch (error) {
     console.error("Erro ao buscar detalhes do despacho:", error);
+    throw error;
+  }
+};
+
+// Funções de exclusão para o ícone trash2
+const deleteOcorrenciaEntrega = async (
+  ocorrenciaId: string,
+): Promise<AxiosResponse> => {
+  if (DEV) {
+    console.log("Mocking API response");
+    const response = {
+      data: { message: "Detalhe excluído com sucesso!" },
+      status: 200,
+      statusText: "OK",
+    };
+    await new Promise((resolve) => setTimeout(resolve, timeout));
+    return response as AxiosResponse;
+  }
+
+  try {
+    const response = await api.delete(
+      `${ROUTE_PATH_DETALHES_ENTREGA}/${ocorrenciaId}`,
+    );
+    return response;
+  } catch (error) {
+    console.error("Erro ao excluir ocorrência da entrega:", error);
+    throw error;
+  }
+};
+
+const deleteOcorrenciaColeta = async (
+  ocorrenciaId: string,
+): Promise<AxiosResponse> => {
+  if (DEV) {
+    console.log("Mocking API response");
+    const response = {
+      data: { message: "Detalhe excluído com sucesso!" },
+      status: 200,
+      statusText: "OK",
+    };
+    await new Promise((resolve) => setTimeout(resolve, timeout));
+    return response as AxiosResponse;
+  }
+
+  try {
+    const response = await api.delete(
+      `${ROUTE_PATH_DETALHES_COLETA}/${ocorrenciaId}`,
+    );
+    return response;
+  } catch (error) {
+    console.error("Erro ao excluir ocorrência da coleta:", error);
+    throw error;
+  }
+};
+
+const deleteOcorrenciaDespacho = async (
+  ocorrenciaId: string,
+): Promise<AxiosResponse> => {
+  if (DEV) {
+    console.log("Mocking API response");
+    const response = {
+      data: { message: "Detalhe excluído com sucesso!" },
+      status: 200,
+      statusText: "OK",
+    };
+    await new Promise((resolve) => setTimeout(resolve, timeout));
+    return response as AxiosResponse;
+  }
+
+  try {
+    const response = await api.delete(
+      `${ROUTE_PATH_DETALHES_DESPACHO}/${ocorrenciaId}`,
+    );
+    return response;
+  } catch (error) {
+    console.error("Erro ao excluir ocorrência do despacho:", error);
+    throw error;
+  }
+};
+
+const deleteOcorrenciaRetirada = async (
+  ocorrenciaId: string,
+): Promise<AxiosResponse> => {
+  if (DEV) {
+    console.log("Mocking API response");
+    const response = {
+      data: { message: "Detalhe excluído com sucesso!" },
+      status: 200,
+      statusText: "OK",
+    };
+    await new Promise((resolve) => setTimeout(resolve, timeout));
+    return response as AxiosResponse;
+  }
+
+  try {
+    const response = await api.delete(
+      `${ROUTE_PATH_DETALHES_RETIRADA}/${ocorrenciaId}`,
+    );
+    return response;
+  } catch (error) {
+    console.error("Erro ao excluir ocorrência da retirada:", error);
+    throw error;
+  }
+};
+
+const deleteOcorrenciaTransferencia = async (
+  ocorrenciaId: string,
+): Promise<AxiosResponse> => {
+  if (DEV) {
+    console.log("Mocking API response");
+    const response = {
+      data: { message: "Detalhe excluído com sucesso!" },
+      status: 200,
+      statusText: "OK",
+    };
+    await new Promise((resolve) => setTimeout(resolve, timeout));
+    return response as AxiosResponse;
+  }
+
+  try {
+    const response = await api.delete(
+      `${ROUTE_PATH_DETALHES_TRANSFERENCIA}/${ocorrenciaId}`,
+    );
+    return response;
+  } catch (error) {
+    console.error("Erro ao excluir ocorrência da transferência:", error);
     throw error;
   }
 };
@@ -342,4 +673,15 @@ export {
   updateOcorrenciaColeta,
   updateOcorrenciaRetirada,
   updateOcorrenciaTransferencia,
+  updateOcorrenciaDespacho,
+  getDetalhesEntrega,
+  getDetalhesColeta,
+  getDetalhesRetirada,
+  getDetalhesTransferencia,
+  getDetalhesDespacho,
+  deleteOcorrenciaEntrega,
+  deleteOcorrenciaColeta,
+  deleteOcorrenciaDespacho,
+  deleteOcorrenciaRetirada,
+  deleteOcorrenciaTransferencia,
 };

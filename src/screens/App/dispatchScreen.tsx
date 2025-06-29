@@ -8,6 +8,7 @@ import {
   TextInput,
   View,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 
 import React, {
@@ -21,6 +22,7 @@ import {
   getInfoDespacho,
   updateOcorrenciaDespacho,
   getDetalhesDespacho,
+  deleteOcorrenciaDespacho,
 } from "@/service/services";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import { useRoute, RouteProp } from "@react-navigation/native";
@@ -34,6 +36,7 @@ import {
   GenericListCard,
   GenericListCardConfigs,
 } from "@components/GenericListCard";
+import { CustomModal } from "@components/CustomModal";
 
 type DispatchScreenParams = {
   manifestoId: string;
@@ -75,17 +78,31 @@ export function DispatchScreen() {
   // Estados para o lançamento de ocorrência
   const bottomSheetRef = useRef<BottomSheet>(null);
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
-  const [selectedOcorrencia, setSelectedOcorrencia] = useState("");
+  const [selectedOcorrencia, setSelectedOcorrencia] = useState<
+    | "despacho cancelado"
+    | "em transito para despacho"
+    | "despacho realizado"
+    | ""
+  >("");
   const [isOcorrenciaSheetOpen, setIsOcorrenciaSheetOpen] = useState(false);
   const [data, setData] = useState("");
   const [hora, setHora] = useState("");
   const [observacao, setObservacao] = useState("");
   const [minutaNumero, setMinutaNumero] = useState("");
 
+  // Estado para modal de exclusão
+  const [deleteModal, setDeleteModal] = useState<null | {
+    id: number;
+    documento: number | string;
+    ocorrencia: string;
+    data: string;
+    hora: string;
+  }>(null);
+
   const ocorrencias = [
-    "Despacho cancelado",
-    "Filial",
-    "Despacho realizado normalmente",
+    "despacho cancelado",
+    "em transito para despacho",
+    "despacho realizado",
   ];
 
   const handleLancarOcorrencia = (item: despachoDTO) => {
@@ -142,7 +159,7 @@ export function DispatchScreen() {
       }
       if (isLote && loteMinutas.length > 0) {
         for (let i = 0; i < loteMinutas.length; i++) {
-          await updateOcorrenciaDespacho(Number(loteMinutas[i]), {
+          await updateOcorrenciaDespacho(Number(loteFretes[i]), {
             ocorrencia: selectedOcorrencia,
             data_ocorrencia: data,
             hora_ocorrencia: hora,
@@ -150,7 +167,17 @@ export function DispatchScreen() {
           });
         }
       } else {
-        await updateOcorrenciaDespacho(Number(minutaNumero), {
+        // Para ocorrência individual, precisamos do frete do item selecionado
+        const selectedItem = entregas.find(
+          (item) => String(item.minutaDespacho) === minutaNumero,
+        );
+
+        if (!selectedItem) {
+          alert("Item não encontrado");
+          return;
+        }
+
+        await updateOcorrenciaDespacho(selectedItem.frete, {
           ocorrencia: selectedOcorrencia,
           data_ocorrencia: data,
           hora_ocorrencia: hora,
@@ -182,7 +209,7 @@ export function DispatchScreen() {
     setDetalhesLoading(true);
     setDetalhesDespacho(null);
     try {
-      const response = await getDetalhesDespacho(String(item.minutaDespacho));
+      const response = await getDetalhesDespacho(String(item.frete));
       setDetalhesDespacho(response.data);
     } catch {
       alert("Não foi possível carregar os detalhes do despacho.");
@@ -213,6 +240,26 @@ export function DispatchScreen() {
       console.error("Error refreshing data:", error);
     } finally {
       setRefreshing(false);
+    }
+  };
+
+  // Função para excluir ocorrência
+  const handleDeleteOcorrencia = async (ocorrenciaId: number) => {
+    try {
+      await deleteOcorrenciaDespacho(ocorrenciaId.toString());
+      if (selectedItem) {
+        const response = await getDetalhesDespacho(String(selectedItem.frete));
+        setDetalhesDespacho(response.data);
+      }
+      setDeleteModal(null);
+      Alert.alert("Sucesso", "Ocorrência excluída com sucesso!");
+    } catch (error) {
+      console.error("Erro ao excluir ocorrência:", error);
+      setDeleteModal(null);
+      Alert.alert(
+        "Erro",
+        "Erro ao excluir ocorrência. Por favor, tente novamente.",
+      );
     }
   };
 
@@ -297,26 +344,22 @@ export function DispatchScreen() {
           isOpen={isDetailsSheetOpen}
           onClose={() => {
             setIsDetailsSheetOpen(false);
-            setDetalhesDespacho(null);
             setDetailsSheetIndex(-1);
           }}
           bottomSheetRef={detailsBottomSheetRef}
           title="Detalhes do despacho"
           primaryFields={[
             {
-              label: "Minuta de Despacho",
-              value:
-                detalhesDespacho?.numero_minuta ||
-                selectedItem?.minutaDespacho ||
-                "",
+              label: "Número da Minuta",
+              value: detalhesDespacho?.numero_minuta || "",
             },
             {
               label: "Frete",
-              value: detalhesDespacho?.frete || selectedItem?.frete || "",
+              value: detalhesDespacho?.frete || "",
             },
           ]}
           columns={[
-            { header: "Nº", accessor: "numero", flex: 0.7 },
+            { header: "Documento", accessor: "documento", flex: 1.5 },
             { header: "Ocorrência", accessor: "ocorrencia", flex: 2 },
             {
               header: "Data",
@@ -342,8 +385,18 @@ export function DispatchScreen() {
               header: "Excluir",
               accessor: "actions",
               flex: 1,
-              render: () => (
-                <TouchableOpacity>
+              render: (item) => (
+                <TouchableOpacity
+                  onPress={() =>
+                    setDeleteModal({
+                      id: item.id,
+                      documento: item.documento,
+                      ocorrencia: item.ocorrencia,
+                      data: item.data,
+                      hora: item.hora,
+                    })
+                  }
+                >
                   <Trash2 width={18} height={18} color="#ff0000" />
                 </TouchableOpacity>
               ),
@@ -437,7 +490,7 @@ export function DispatchScreen() {
                   >
                     <TextInput
                       className="h-12 rounded-lg border border-gray-300 px-4"
-                      value={data}
+                      value={data ? data.split("-").reverse().join("/") : ""}
                       editable={false}
                       placeholder="DD/MM/AAAA"
                       pointerEvents="none"
@@ -448,20 +501,16 @@ export function DispatchScreen() {
                     mode="date"
                     onConfirm={(date) => {
                       setShowDatePicker(false);
-                      // Formatar para DD/MM/AAAA
-                      const formatted = date
-                        .toISOString()
-                        .split("T")[0]
-                        .split("-")
-                        .reverse()
-                        .join("/");
+                      // Salve no formato YYYY-MM-DD
+                      const formatted = date.toISOString().split("T")[0];
                       setData(formatted);
                     }}
                     onCancel={() => setShowDatePicker(false)}
                     initialDate={
                       data
                         ? (() => {
-                            const [d, m, y] = data.split("/");
+                            // data está em YYYY-MM-DD
+                            const [y, m, d] = data.split("-");
                             return new Date(`${y}-${m}-${d}`);
                           })()
                         : undefined
@@ -555,7 +604,13 @@ export function DispatchScreen() {
                     key={index}
                     className="border-b border-gray-200 py-4"
                     onPress={() => {
-                      setSelectedOcorrencia(ocorrencia);
+                      setSelectedOcorrencia(
+                        ocorrencia as
+                          | "despacho cancelado"
+                          | "em transito para despacho"
+                          | "despacho realizado"
+                          | "",
+                      );
                       setIsOcorrenciaSheetOpen(false);
                     }}
                   >
@@ -566,6 +621,87 @@ export function DispatchScreen() {
             </BottomSheetView>
           </BottomSheet>
         )}
+
+        {/* Modal de confirmação de exclusão */}
+        <CustomModal
+          visible={!!deleteModal}
+          onClose={() => setDeleteModal(null)}
+        >
+          <View style={{ gap: 12 }}>
+            <H4 style={{ color: "#222", textAlign: "center", marginBottom: 8 }}>
+              Excluir Ocorrência
+            </H4>
+            <View style={{ gap: 8 }}>
+              <P>Documento:</P>
+              <TextInput
+                value={deleteModal?.documento?.toString() || ""}
+                editable={false}
+                className="h-12 rounded-lg border border-gray-300 px-4"
+              />
+              <P>Ocorrência:</P>
+              <TextInput
+                value={deleteModal?.ocorrencia || ""}
+                editable={false}
+                className="h-12 rounded-lg border border-gray-300 px-4"
+              />
+              <P>Data Ocorrência:</P>
+              <TextInput
+                value={
+                  deleteModal?.data
+                    ? deleteModal.data.split("-").reverse().join("/")
+                    : ""
+                }
+                editable={false}
+                className="h-12 rounded-lg border border-gray-300 px-4"
+              />
+              <P>Hora Ocorrência:</P>
+              <TextInput
+                value={deleteModal?.hora || ""}
+                editable={false}
+                className="h-12 rounded-lg border border-gray-300 px-4"
+              />
+            </View>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "flex-end",
+                gap: 12,
+                marginTop: 16,
+              }}
+            >
+              <Button
+                onPress={() => handleDeleteOcorrencia(deleteModal?.id!)}
+                style={{
+                  backgroundColor: "#a5a5d6",
+                  borderRadius: 4,
+                  width: 80,
+                  height: 36,
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <P style={{ color: "#fff", fontWeight: "bold", fontSize: 16 }}>
+                  SIM
+                </P>
+              </Button>
+              <Button
+                onPress={() => setDeleteModal(null)}
+                style={{
+                  backgroundColor: "#1e3a8a",
+                  borderRadius: 4,
+                  width: 80,
+                  height: 36,
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <P style={{ color: "#fff", fontWeight: "bold", fontSize: 16 }}>
+                  NÃO
+                </P>
+              </Button>
+            </View>
+          </View>
+        </CustomModal>
       </View>
     </ContainerAppCpX>
   );
