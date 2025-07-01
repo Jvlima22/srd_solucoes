@@ -1,14 +1,10 @@
-import {
-  BottomSheetPicker,
-  type BottomSheetPickerChoiceRef,
-} from "@components/BottomSheetPicker";
 import { Button } from "@components/Button";
 import { ContainerX } from "@components/ContainerX";
 import { H2, H4, P } from "@components/Typography";
 import { useAuth } from "@hooks/useAuth";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { ArrowLeft, Eye, EyeOff, ChevronDown } from "lucide-react-native";
-import { createRef, useState } from "react";
+import { ArrowLeft, Eye, EyeOff } from "lucide-react-native";
+import { useState } from "react";
 import {
   View,
   Platform,
@@ -19,14 +15,12 @@ import {
 import type { RootStackParamList } from "../../@types/routes";
 import { InputField } from "@components/InputField";
 import { BackButton } from "@components/BackButton";
+import { AutocompleteInput } from "@components/AutocompleteInput";
 
 type Props = NativeStackScreenProps<RootStackParamList, "SignInScreen">;
+
 export function SignInScreen({ navigation }: Props) {
-  const [selectStatus, setSelectStatus] = useState<{
-    name: string;
-    value: string;
-  } | null>(null);
-  const bottomSheetPicker = createRef<BottomSheetPickerChoiceRef>();
+  const [selectedUnidade, setSelectedUnidade] = useState<Unidade | null>(null);
   const [form, setForm] = useState({
     login: "",
     senha: "",
@@ -34,12 +28,17 @@ export function SignInScreen({ navigation }: Props) {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { signIn } = useAuth();
+
   function handleBack() {
     navigation.goBack();
   }
 
+  const handleSelectUnidade = (unidade: Unidade) => {
+    setSelectedUnidade(unidade);
+  };
+
   async function handleLogIn() {
-    if (!selectStatus) {
+    if (!selectedUnidade) {
       alert("Selecione a unidade");
       return;
     }
@@ -53,7 +52,7 @@ export function SignInScreen({ navigation }: Props) {
     }
     setIsLoading(true);
     try {
-      await signIn(selectStatus?.value!, form.login, form.senha);
+      await signIn(selectedUnidade.identificador, form.login, form.senha);
     } catch (error) {
       console.log("SIGNIN SCREEN", error);
       alert("Não foi possível fazer o login, tente novamente!");
@@ -91,15 +90,12 @@ export function SignInScreen({ navigation }: Props) {
 
             <View className="mt-4 w-full gap-3">
               <P className="text-lg font-medium">Unidade</P>
-              <InputField
-                value={selectStatus?.name || ""}
+              <AutocompleteInput
+                value={selectedUnidade?.nome || ""}
                 onChangeText={() => {}}
-                placeholder="Selecione a unidade"
-                editable={false}
-                rightIcon={<ChevronDown />}
-                onPressRightIcon={() =>
-                  bottomSheetPicker.current?.showBottomSheet()
-                }
+                onSelectUnidade={handleSelectUnidade}
+                placeholder="Digite para buscar a unidade"
+                selectedUnidade={selectedUnidade}
               />
             </View>
 
@@ -149,21 +145,6 @@ export function SignInScreen({ navigation }: Props) {
           </View>
         </KeyboardAvoidingView>
       </View>
-
-      <BottomSheetPicker
-        ref={bottomSheetPicker}
-        selected={selectStatus}
-        data={[
-          { name: "Agente", value: "Agente" },
-          { name: "Cliente", value: "Cliente" },
-          { name: "Motorista", value: "Motorista" },
-          { name: "Transportadora", value: "Transportadora" },
-          { name: "Usuario", value: "Usuario" },
-        ]}
-        onChangeValue={(value) => {
-          setSelectStatus(value);
-        }}
-      />
     </ContainerX>
   );
 }

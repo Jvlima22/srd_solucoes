@@ -7,7 +7,8 @@
     "destinatario": "Cliente ID 3",
     "cidade": "São Paulo",
     "uf": "SP",
-    "status": "OUTRO"
+    "status": "OUTRO",
+    "tipo_acao": 1
   },
   {
     "coleta": 13,
@@ -17,7 +18,8 @@
     "destinatario": "Cliente ID 3",
     "cidade": "São Paulo",
     "uf": "SP",
-    "status": "OUTRO"
+    "status": "OUTRO",
+    "tipo_acao": 4
   },
   {
     "coleta": 14,
@@ -27,7 +29,8 @@
     "destinatario": "Cliente ID 3",
     "cidade": "São Paulo",
     "uf": "SP",
-    "status": "OUTRO"
+    "status": "OUTRO",
+    "tipo_acao": 6
   },
   {
     "coleta": 15,
@@ -37,7 +40,8 @@
     "destinatario": "Cliente ID 3",
     "cidade": "São Paulo",
     "uf": "SP",
-    "status": "OUTRO"
+    "status": "OUTRO",
+    "tipo_acao": 8
   },
   {
     "coleta": 16,
@@ -47,7 +51,8 @@
     "destinatario": "Cliente ID 3",
     "cidade": "São Paulo",
     "uf": "SP",
-    "status": "OUTRO"
+    "status": "OUTRO",
+    "tipo_acao": 1
   },
   {
     "coleta": 17,
@@ -57,7 +62,8 @@
     "destinatario": "Cliente ID 3",
     "cidade": "São Paulo",
     "uf": "SP",
-    "status": "OUTRO"
+    "status": "OUTRO",
+    "tipo_acao": 4
   },
   {
     "coleta": 18,
@@ -67,7 +73,8 @@
     "destinatario": "Cliente ID 3",
     "cidade": "São Paulo",
     "uf": "SP",
-    "status": "OUTRO"
+    "status": "OUTRO",
+    "tipo_acao": 6
   },
   {
     "coleta": 19,
@@ -77,7 +84,8 @@
     "destinatario": "Cliente ID 3",
     "cidade": "São Paulo",
     "uf": "SP",
-    "status": "OUTRO"
+    "status": "OUTRO",
+    "tipo_acao": 8
   },
   {
     "coleta": 20,
@@ -87,7 +95,8 @@
     "destinatario": "Cliente ID 3",
     "cidade": "São Paulo",
     "uf": "SP",
-    "status": "OUTRO"
+    "status": "OUTRO",
+    "tipo_acao": 1
   },
   {
     "coleta": 21,
@@ -97,7 +106,8 @@
     "destinatario": "Cliente ID 3",
     "cidade": "São Paulo",
     "uf": "SP",
-    "status": "OUTRO"
+    "status": "OUTRO",
+    "tipo_acao": 4
   },
   {
     "coleta": 22,
@@ -107,7 +117,8 @@
     "destinatario": "Cliente ID 3",
     "cidade": "São Paulo",
     "uf": "SP",
-    "status": "OUTRO"
+    "status": "OUTRO",
+    "tipo_acao": 6
   },
   {
     "coleta": 23,
@@ -117,7 +128,8 @@
     "destinatario": "Cliente ID 3",
     "cidade": "São Paulo",
     "uf": "SP",
-    "status": "OUTRO"
+    "status": "OUTRO",
+    "tipo_acao": 8
   },
   {
     "coleta": 24,
@@ -127,7 +139,8 @@
     "destinatario": "Cliente ID 3",
     "cidade": "São Paulo",
     "uf": "SP",
-    "status": "OUTRO"
+    "status": "OUTRO",
+    "tipo_acao": 1
   },
   {
     "coleta": 25,
@@ -137,7 +150,8 @@
     "destinatario": "Cliente ID 3",
     "cidade": "São Paulo",
     "uf": "SP",
-    "status": "OUTRO"
+    "status": "OUTRO",
+    "tipo_acao": 4
   },
   {
     "coleta": 26,
@@ -147,7 +161,8 @@
     "destinatario": "Cliente ID 3",
     "cidade": "São Paulo",
     "uf": "SP",
-    "status": "OUTRO"
+    "status": "OUTRO",
+    "tipo_acao": 6
   },
   {
     "coleta": 27,
@@ -157,7 +172,8 @@
     "destinatario": "Cliente ID 3",
     "cidade": "São Paulo",
     "uf": "SP",
-    "status": "OUTRO"
+    "status": "OUTRO",
+    "tipo_acao": 8
   },
   {
     "coleta": 28,
@@ -167,7 +183,8 @@
     "destinatario": "Cliente ID 3",
     "cidade": "São Paulo",
     "uf": "SP",
-    "status": "OUTRO"
+    "status": "OUTRO",
+    "tipo_acao": 1
   },
   {
     "coleta": 29,
@@ -177,7 +194,8 @@
     "destinatario": "Cliente ID 3",
     "cidade": "São Paulo",
     "uf": "SP",
-    "status": "OUTRO"
+    "status": "OUTRO",
+    "tipo_acao": 4
   },
   {
     "coleta": 30,
@@ -187,7 +205,8 @@
     "destinatario": "Cliente ID 3",
     "cidade": "São Paulo",
     "uf": "SP",
-    "status": "OUTRO"
+    "status": "OUTRO",
+    "tipo_acao": 6
   },
   {
     "coleta": 31,
@@ -197,7 +216,8 @@
     "destinatario": "Cliente ID 3",
     "cidade": "São Paulo",
     "uf": "SP",
-    "status": "OUTRO"
+    "status": "OUTRO",
+    "tipo_acao": 8
   },
   {
     "coleta": 32,

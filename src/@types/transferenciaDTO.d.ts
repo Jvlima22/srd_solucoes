@@ -6,4 +6,5 @@ interface transferenciaDTO {
   cidade: string;
   uf: string;
   status: string;
+  tipo_acao: number;
 }

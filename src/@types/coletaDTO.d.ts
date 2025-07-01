@@ -7,4 +7,5 @@ interface coletaDTO {
   cidade: string | null;
   uf: string | null;
   status: string | null;
+  tipo_acao: number;
 }

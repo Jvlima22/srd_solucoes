@@ -3,6 +3,7 @@ import { H4, P } from "@components/Typography";
 import { FlatList, View } from "react-native";
 import React from "react";
 import { Check } from "lucide-react-native";
+import { controlarBotaoOcorrencia, converterTipoMovimento } from "@/lib/utils";
 
 // Usando os tipos existentes do projeto
 type ColetaItem = coletaDTO;
@@ -92,6 +93,15 @@ export function GenericListCard({
     return value !== undefined && value !== null ? String(value) : "";
   };
 
+  // Função para verificar se deve mostrar o botão de ocorrência
+  const deveMostrarBotaoOcorrencia = (item: DataItem): boolean => {
+    // Usa o tipo da configuração para determinar o tipo de movimento
+    const tipoMovimento = converterTipoMovimento(config.type);
+    const tipoAcao = (item as any).tipo_acao;
+
+    return controlarBotaoOcorrencia(tipoMovimento, tipoAcao);
+  };
+
   return (
     <FlatList
       data={data}
@@ -106,50 +116,73 @@ export function GenericListCard({
       )}
       renderItem={({ item }) => {
         const id = getItemId(item);
+        const mostrarBotaoOcorrencia = deveMostrarBotaoOcorrencia(item);
+
         return (
           <View className="mt-3">
             <View className="rounded-lg border border-zinc-600 p-5">
-              <View className="w-1/1 mb-5 flex-row items-center justify-center gap-5 self-center rounded-lg bg-blue-900 p-3">
-                <Button
-                  className="h-8 w-8 flex-1 flex-row items-center bg-transparent"
-                  style={{ backgroundColor: "transparent", elevation: 0 }}
-                  variant="default"
-                  onPress={() => {
-                    setSelectedItems(
-                      selectedItems.includes(id)
-                        ? selectedItems.filter((itemId) => itemId !== id)
-                        : [...selectedItems, id],
-                    );
-                  }}
-                >
-                  {selectedItems.includes(id) ? (
-                    <>
-                      <P className="text-base font-bold text-white">
-                        Selecionado
-                      </P>
-                      <View className="ml-8 h-6 w-8 items-center justify-center rounded-full border border-zinc-300 bg-white">
-                        <Check size={16} color="#2563eb" />
-                      </View>
-                    </>
-                  ) : (
-                    <>
-                      <P className="text-base font-bold text-white">
-                        Selecionar
-                      </P>
-                      <View className="ml-8 h-6 w-8 items-center justify-center rounded-full border border-zinc-300 bg-white" />
-                    </>
-                  )}
-                </Button>
-              </View>
+              {/* View azul para o número da coleta */}
+              {config.type === "coleta" && (
+                <View className="mb-5 w-1/2 flex-row items-center justify-center gap-3 self-center rounded-lg bg-blue-900 p-3">
+                  <P className="text-white">COLETA</P>
+                  <View className="h-8 w-8 items-center justify-center rounded-full bg-white">
+                    <P>{(item as ColetaItem).coleta}</P>
+                  </View>
+                </View>
+              )}
+
+              {/* Botão de seleção - não mostra para coleta */}
+              {config.type !== "coleta" && (
+                <View className="w-1/1 mb-5 flex-row items-center justify-center gap-5 self-center rounded-lg bg-blue-900 p-3">
+                  <Button
+                    className="h-8 w-8 flex-1 flex-row items-center bg-transparent"
+                    style={{ backgroundColor: "transparent", elevation: 0 }}
+                    variant="default"
+                    onPress={() => {
+                      setSelectedItems(
+                        selectedItems.includes(id)
+                          ? selectedItems.filter((itemId) => itemId !== id)
+                          : [...selectedItems, id],
+                      );
+                    }}
+                  >
+                    {selectedItems.includes(id) ? (
+                      <>
+                        <P className="text-base font-bold text-white">
+                          Selecionado
+                        </P>
+                        <View className="ml-8 h-6 w-8 items-center justify-center rounded-full border border-zinc-300 bg-white">
+                          <Check size={16} color="#2563eb" />
+                        </View>
+                      </>
+                    ) : (
+                      <>
+                        <P className="text-base font-bold text-white">
+                          Selecionar
+                        </P>
+                        <View className="ml-8 h-6 w-8 items-center justify-center rounded-full border border-zinc-300 bg-white" />
+                      </>
+                    )}
+                  </Button>
+                </View>
+              )}
 
               <View className="flex-col">
-                {config.fields.map((field, index) => (
-                  <View key={index} className="flex-row items-center gap-3">
-                    <P className={`text-sm ${field.isBold ? "font-bold" : ""}`}>
-                      {field.label} - {getFieldValue(item, field)}
-                    </P>
-                  </View>
-                ))}
+                {config.fields.map((field, index) => {
+                  // Não exibir o campo 'Coleta' na lista se for do tipo coleta
+                  if (config.type === "coleta" && field.key === "coleta") {
+                    return null;
+                  }
+                  return (
+                    <View key={index} className="flex-row items-center gap-3">
+                      <P
+                        className={`text-sm ${field.isBold ? "font-bold" : ""}`}
+                      >
+                        {field.label} - {getFieldValue(item, field)}
+                      </P>
+                    </View>
+                  );
+                })}
               </View>
 
               <View className="mt-5 items-center justify-center">
@@ -162,17 +195,20 @@ export function GenericListCard({
                 </Button>
               </View>
 
-              <View className="mt-2 items-center justify-center">
-                <Button
-                  className="w-1/2"
-                  style={{ backgroundColor: "#dc2626" }}
-                  onPress={() => onLancarOcorrencia(item)}
-                >
-                  <P className="text-base font-bold text-white">
-                    Lançar ocorrência
-                  </P>
-                </Button>
-              </View>
+              {/* Botão "LANÇAR OCORRÊNCIA" - só mostra se permitido */}
+              {mostrarBotaoOcorrencia && (
+                <View className="mt-2 items-center justify-center">
+                  <Button
+                    className="w-1/2"
+                    style={{ backgroundColor: "#dc2626" }}
+                    onPress={() => onLancarOcorrencia(item)}
+                  >
+                    <P className="text-base font-bold text-white">
+                      Lançar ocorrência
+                    </P>
+                  </Button>
+                </View>
+              )}
             </View>
           </View>
         );

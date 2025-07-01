@@ -10,13 +10,20 @@ import {
   TouchableOpacity,
   Alert,
 } from "react-native";
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, {
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+  useMemo,
+} from "react";
 import {
   getInfoColeta,
   updateOcorrenciaColeta,
   getDetalhesColeta,
   deleteOcorrenciaColeta,
 } from "@/service/services";
+import { controlarBotaoOcorrencia, converterTipoMovimento } from "@/lib/utils";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import { useRoute, RouteProp } from "@react-navigation/native";
 import { ChevronDown, Trash2 } from "lucide-react-native";
@@ -27,9 +34,9 @@ import {
   GenericListCard,
   GenericListCardConfigs,
 } from "@components/GenericListCard";
-import * as DocumentPicker from "expo-document-picker";
-import { Portal } from "@rn-primitives/portal";
+
 import { CustomModal } from "@components/CustomModal";
+import { FileUpload } from "@components/FileUpload";
 
 type CollectionScreenParams = {
   manifestoId: string;
@@ -51,6 +58,14 @@ interface DetalhesColetaDTO {
   }[];
 }
 
+// Função utilitária para cor da borda dos campos obrigatórios
+function getInputBorderColor(
+  value: string | number | null | undefined,
+  obrigatorio: boolean,
+) {
+  return obrigatorio && !value ? "#ef4444" : "#d1d5db"; // red-500 ou gray-300
+}
+
 export function CollectionScreen() {
   const route = useRoute<CollectionScreenRouteProp>();
   const manifestoId = route.params?.manifestoId;
@@ -58,7 +73,6 @@ export function CollectionScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedItem, setSelectedItem] = useState<coletaDTO | null>(null);
-  const [selectedColetas, setSelectedColetas] = useState<string[]>([]);
 
   // Estados para o picker de data/hora
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -99,6 +113,14 @@ export function CollectionScreen() {
     hora_ocorrencia: string;
   }>(null);
 
+  // Calcular se pode excluir ocorrência baseado no tipo_acao do item selecionado
+  const podeExcluirOcorrencia = useMemo(() => {
+    if (!selectedItem) return false;
+    const tipoMovimento = converterTipoMovimento("coleta");
+    const tipoAcao = selectedItem.tipo_acao;
+    return controlarBotaoOcorrencia(tipoMovimento, tipoAcao);
+  }, [selectedItem]);
+
   const ocorrencias = [
     "Coleta cancelada",
     "Em transito para coleta",
@@ -111,6 +133,30 @@ export function CollectionScreen() {
     { id: 3, nome: "VIZINHO" },
     { id: 4, nome: "PORTEIRO" },
   ];
+
+  // Função para validar se todos os campos obrigatórios estão preenchidos
+  const isFormValid = useMemo(() => {
+    // Campos obrigatórios básicos
+    const basicFieldsValid = selectedOcorrencia && data && hora;
+
+    // Se não são campos básicos válidos, retorna false
+    if (!basicFieldsValid) return false;
+
+    // Validação adicional para "Coleta realizado normalmente"
+    if (selectedOcorrencia === "Coleta realizado normalmente") {
+      return recebedor && documentoRecebedor && idTipoRecebedor && comprovante;
+    }
+
+    return true;
+  }, [
+    selectedOcorrencia,
+    data,
+    hora,
+    recebedor,
+    documentoRecebedor,
+    idTipoRecebedor,
+    comprovante,
+  ]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -142,28 +188,8 @@ export function CollectionScreen() {
     bottomSheetRef.current?.expand();
   };
 
-  // Função para selecionar arquivo
-  const handleSelectFile = async () => {
-    try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: ["image/*", "application/pdf"],
-        copyToCacheDirectory: true,
-      });
-
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        const file = result.assets[0];
-        setComprovante({
-          uri: file.uri,
-          name: file.name,
-          type: file.mimeType,
-          size: file.size,
-        });
-      }
-    } catch (error) {
-      console.error("Erro ao selecionar arquivo:", error);
-      alert("Erro ao selecionar arquivo. Tente novamente.");
-    }
-  };
+  const [isLote, setIsLote] = useState(false);
+  const [loteColetas, setLoteColetas] = useState<string[]>([]);
 
   const handleSalvarOcorrencia = async () => {
     try {
@@ -187,48 +213,75 @@ export function CollectionScreen() {
         }
       }
 
-      const payload: any = {
-        data_ocorrencia: data,
-        hora_ocorrencia: hora,
-        observacao: observacao,
-        ocorrencia: selectedOcorrencia,
-      };
+      if (isLote && loteColetas.length > 0) {
+        // Lançar ocorrência para todos os coletas em lote
+        for (let i = 0; i < loteColetas.length; i++) {
+          const payload: any = {
+            data_ocorrencia: data,
+            hora_ocorrencia: hora,
+            observacao: observacao,
+            ocorrencia: selectedOcorrencia,
+          };
 
-      // Adiciona campos extras se for "Coleta realizado normalmente"
-      if (selectedOcorrencia === "Coleta realizado normalmente") {
-        payload.recebedor = recebedor;
-        payload.documento_recebedor = documentoRecebedor;
-        payload.id_tipo_recebedor = idTipoRecebedor;
+          if (selectedOcorrencia === "Coleta realizado normalmente") {
+            payload.recebedor = recebedor;
+            payload.documento_recebedor = documentoRecebedor;
+            payload.id_tipo_recebedor = idTipoRecebedor;
 
-        // Criar FormData para enviar o arquivo
-        if (comprovante) {
-          const formData = new FormData();
-          formData.append("comprovante", {
-            uri: comprovante.uri,
-            name: comprovante.name,
-            type: comprovante.type,
-          } as any);
-
-          // Adicionar outros campos ao FormData
-          Object.keys(payload).forEach((key) => {
-            formData.append(key, payload[key]);
-          });
-
-          await updateOcorrenciaColeta(Number(coletaNumero), formData);
+            if (comprovante) {
+              const formData = new FormData();
+              formData.append("comprovante", {
+                uri: comprovante.uri,
+                name: comprovante.name,
+                type: comprovante.type,
+              } as any);
+              Object.keys(payload).forEach((key) => {
+                formData.append(key, payload[key]);
+              });
+              await updateOcorrenciaColeta(Number(loteColetas[i]), formData);
+            } else {
+              await updateOcorrenciaColeta(Number(loteColetas[i]), payload);
+            }
+          } else {
+            await updateOcorrenciaColeta(Number(loteColetas[i]), payload);
+          }
+        }
+      } else {
+        const payload: any = {
+          data_ocorrencia: data,
+          hora_ocorrencia: hora,
+          observacao: observacao,
+          ocorrencia: selectedOcorrencia,
+        };
+        if (selectedOcorrencia === "Coleta realizado normalmente") {
+          payload.recebedor = recebedor;
+          payload.documento_recebedor = documentoRecebedor;
+          payload.id_tipo_recebedor = idTipoRecebedor;
+          if (comprovante) {
+            const formData = new FormData();
+            formData.append("comprovante", {
+              uri: comprovante.uri,
+              name: comprovante.name,
+              type: comprovante.type,
+            } as any);
+            Object.keys(payload).forEach((key) => {
+              formData.append(key, payload[key]);
+            });
+            await updateOcorrenciaColeta(Number(coletaNumero), formData);
+          } else {
+            await updateOcorrenciaColeta(Number(coletaNumero), payload);
+          }
         } else {
           await updateOcorrenciaColeta(Number(coletaNumero), payload);
         }
-      } else {
-        await updateOcorrenciaColeta(Number(coletaNumero), payload);
       }
 
       // Atualiza a lista de coletas
       await fetchData();
-
       // Fecha o bottom sheet e limpa o formulário
       bottomSheetRef.current?.close();
       setIsBottomSheetOpen(false);
-      // Reset form
+      // Reset completo dos campos
       setColetaNumero("");
       setData("");
       setHora("");
@@ -238,7 +291,8 @@ export function CollectionScreen() {
       setDocumentoRecebedor("");
       setIdTipoRecebedor(null);
       setComprovante(null);
-
+      setIsLote(false);
+      setLoteColetas([]);
       alert("Ocorrência salva com sucesso!");
     } catch (error) {
       console.error("Error saving ocorrencia:", error);
@@ -271,6 +325,7 @@ export function CollectionScreen() {
         const response = await getDetalhesColeta(String(selectedItem.coleta));
         setDetalhesColeta(response.data);
       }
+      await fetchData();
       setDeleteModal(null);
       Alert.alert("Sucesso", "Ocorrência excluída com sucesso!");
     } catch (error) {
@@ -324,8 +379,8 @@ export function CollectionScreen() {
           config={GenericListCardConfigs.coleta}
           refreshing={refreshing}
           onRefresh={onRefresh}
-          selectedItems={selectedColetas}
-          setSelectedItems={setSelectedColetas}
+          selectedItems={[]}
+          setSelectedItems={() => {}}
           onOpenDetails={(item) => handleOpenDetalhes(item as coletaDTO)}
           onLancarOcorrencia={(item) =>
             handleLancarOcorrencia(item as coletaDTO)
@@ -362,8 +417,15 @@ export function CollectionScreen() {
                 <View className="mb-4">
                   <P className="mb-2">Ocorrência:</P>
                   <Pressable
-                    className="h-12 justify-center rounded-lg border border-gray-300 px-4"
-                    style={{ position: "relative" }}
+                    className={`h-12 justify-center rounded-lg border px-4`}
+                    style={{
+                      position: "relative",
+                      borderColor: getInputBorderColor(
+                        selectedOcorrencia,
+                        true,
+                      ),
+                      borderWidth: 1,
+                    }}
                     onPress={() => setIsOcorrenciaSheetOpen(true)}
                   >
                     <P style={{ paddingRight: 32 }}>
@@ -389,7 +451,11 @@ export function CollectionScreen() {
                     activeOpacity={0.7}
                   >
                     <TextInput
-                      className="h-12 rounded-lg border border-gray-300 px-4"
+                      className={`h-12 rounded-lg border px-4`}
+                      style={{
+                        borderColor: getInputBorderColor(data, true),
+                        borderWidth: 1,
+                      }}
                       value={data ? data.split("-").reverse().join("/") : ""}
                       editable={false}
                       placeholder="DD/MM/AAAA"
@@ -425,7 +491,11 @@ export function CollectionScreen() {
                     activeOpacity={0.7}
                   >
                     <TextInput
-                      className="h-12 rounded-lg border border-gray-300 px-4"
+                      className={`h-12 rounded-lg border px-4`}
+                      style={{
+                        borderColor: getInputBorderColor(hora, true),
+                        borderWidth: 1,
+                      }}
                       value={hora}
                       editable={false}
                       placeholder="HH:MM"
@@ -475,7 +545,11 @@ export function CollectionScreen() {
                     <View className="mb-4">
                       <P className="mb-2">Recebedor:</P>
                       <TextInput
-                        className="h-12 rounded-lg border border-gray-300 px-4"
+                        className={`h-12 rounded-lg border px-4`}
+                        style={{
+                          borderColor: getInputBorderColor(recebedor, true),
+                          borderWidth: 1,
+                        }}
                         value={recebedor}
                         onChangeText={setRecebedor}
                         placeholder="Digite o nome do recebedor"
@@ -484,7 +558,14 @@ export function CollectionScreen() {
                     <View className="mb-4">
                       <P className="mb-2">Documento do Recebedor:</P>
                       <TextInput
-                        className="h-12 rounded-lg border border-gray-300 px-4"
+                        className={`h-12 rounded-lg border px-4`}
+                        style={{
+                          borderColor: getInputBorderColor(
+                            documentoRecebedor,
+                            true,
+                          ),
+                          borderWidth: 1,
+                        }}
                         value={documentoRecebedor}
                         onChangeText={setDocumentoRecebedor}
                         placeholder="Digite o documento do recebedor"
@@ -493,8 +574,15 @@ export function CollectionScreen() {
                     <View className="mb-4">
                       <P className="mb-2">Tipo de Recebedor:</P>
                       <Pressable
-                        className="h-12 justify-center rounded-lg border border-gray-300 px-4"
-                        style={{ position: "relative" }}
+                        className={`h-12 justify-center rounded-lg border px-4`}
+                        style={{
+                          position: "relative",
+                          borderColor: getInputBorderColor(
+                            idTipoRecebedor,
+                            true,
+                          ),
+                          borderWidth: 1,
+                        }}
                         onPress={() => setIsTipoRecebedorSheetOpen(true)}
                       >
                         <P style={{ paddingRight: 32 }}>
@@ -516,48 +604,62 @@ export function CollectionScreen() {
                         </View>
                       </Pressable>
                     </View>
-                    <View className="mb-4">
-                      <P className="mb-2">Comprovante:</P>
-                      <View className="mb-4 flex-row items-center">
-                        <Pressable
-                          onPress={handleSelectFile}
-                          style={{
-                            borderWidth: 2,
-                            borderColor: "red",
-                            backgroundColor: "#f5f5f5",
-                            paddingHorizontal: 8,
-                            paddingVertical: 4,
-                            borderRadius: 4,
-                            marginRight: 8,
-                          }}
-                        >
-                          <P style={{ color: "#222", fontWeight: "bold" }}>
-                            Escolher Ficheiros
-                          </P>
-                        </Pressable>
-                        <P style={{ color: "#222" }}>
-                          {comprovante
-                            ? comprovante.name
-                            : "Nenhum ficheiro selecionado"}
-                        </P>
-                      </View>
-                    </View>
+                    <FileUpload
+                      onFileSelect={setComprovante}
+                      selectedFile={comprovante}
+                      isRequired={true}
+                      getInputBorderColor={getInputBorderColor}
+                    />
                   </>
                 )}
 
-                <View className="flex-row justify-between gap-4">
+                <View className="flex-row justify-end gap-2">
+                  <Button
+                    style={{
+                      backgroundColor: isFormValid ? "#1e3a8a" : "#a5a5d6",
+                      borderRadius: 4,
+                      width: 110,
+                      height: 36,
+                      justifyContent: "center",
+                      alignItems: "center",
+                    }}
+                    onPress={isFormValid ? handleSalvarOcorrencia : undefined}
+                    disabled={!isFormValid}
+                  >
+                    <P
+                      style={{
+                        color: "#fff",
+                        fontWeight: "bold",
+                        fontSize: 16,
+                      }}
+                    >
+                      SALVAR
+                    </P>
+                  </Button>
                   <BackButton
-                    className="flex-1"
+                    style={{
+                      backgroundColor: "#1e3a8a",
+                      borderRadius: 4,
+                      width: 110,
+                      height: 36,
+                      justifyContent: "center",
+                      alignItems: "center",
+                    }}
                     onPress={() => {
                       bottomSheetRef.current?.close();
                       setIsBottomSheetOpen(false);
                     }}
                   >
-                    <P className="text-white">Voltar</P>
+                    <P
+                      style={{
+                        color: "#fff",
+                        fontWeight: "bold",
+                        fontSize: 16,
+                      }}
+                    >
+                      VOLTAR
+                    </P>
                   </BackButton>
-                  <Button className="flex-1" onPress={handleSalvarOcorrencia}>
-                    <P className="text-white">Salvar</P>
-                  </Button>
                 </View>
               </ScrollView>
             </BottomSheetView>
@@ -662,21 +764,28 @@ export function CollectionScreen() {
               header: "Excluir",
               accessor: "actions",
               flex: 1,
-              render: (item) => (
-                <TouchableOpacity
-                  onPress={() =>
-                    setDeleteModal({
-                      id: item.id,
-                      documentos: item.documentos,
-                      nome_ocorrencia: item.nome_ocorrencia,
-                      data_ocorrencia: item.data_ocorrencia,
-                      hora_ocorrencia: item.hora_ocorrencia,
-                    })
-                  }
-                >
-                  <Trash2 width={18} height={18} color="#ff0000" />
-                </TouchableOpacity>
-              ),
+              render: (item) =>
+                podeExcluirOcorrencia ? (
+                  <TouchableOpacity
+                    onPress={() =>
+                      setDeleteModal({
+                        id: item.id,
+                        documentos: item.documentos,
+                        nome_ocorrencia: item.nome_ocorrencia,
+                        data_ocorrencia: item.data_ocorrencia,
+                        hora_ocorrencia: item.hora_ocorrencia,
+                      })
+                    }
+                  >
+                    <Trash2 width={18} height={18} color="#ff0000" />
+                  </TouchableOpacity>
+                ) : (
+                  <View
+                    style={{ alignItems: "center", justifyContent: "center" }}
+                  >
+                    <P style={{ color: "#999", fontSize: 12 }}>-</P>
+                  </View>
+                ),
             },
           ]}
           data={detalhesColeta?.ocorrencias || []}

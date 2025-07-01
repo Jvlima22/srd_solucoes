@@ -35,7 +35,7 @@ import {
   BottomSheetPickerChoiceRef,
   BottomSheetPicker,
 } from "@components/BottomSheetPicker";
-import { getInfoManifest } from "@/service/services";
+import { getInfoManifest, iniciarTransporte } from "@/service/services";
 import type { RootStackParamList } from "../../@types/routes";
 
 interface RootObject {
@@ -107,17 +107,13 @@ export function ManifestScreen() {
       return "Inativo";
     }
 
-    if (!operationStatus || operationStatus === "0 / 0") {
+    // Só fica "Inativo" quando a ocorrência for "0 / 0"
+    if (operationStatus === "0 / 0") {
       return "Inativo";
     }
 
-    const [total, completed] = operationStatus.split(" / ").map(Number);
-
-    if (completed < total) {
-      return "Baixar";
-    } else {
-      return "Inativo";
-    }
+    // Todos os demais casos ficam como "Baixar"
+    return "Baixar";
   };
 
   // Função auxiliar para determinar se o botão deve estar desabilitado
@@ -127,18 +123,23 @@ export function ManifestScreen() {
       return true;
     }
 
-    if (!operationStatus || operationStatus === "0 / 0") {
+    // Só desabilita quando a ocorrência for "0 / 0"
+    if (operationStatus === "0 / 0") {
       return true;
     }
 
-    const [total, completed] = operationStatus.split(" / ").map(Number);
-    return completed >= total; // Inativo quando completed >= total (concluído)
+    // Todos os demais casos ficam habilitados
+    return false;
   };
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const response = await getInfoManifest();
+      console.log("ROUTES", user?.name);
+      // Passar o id_motorista para filtrar apenas os manifestos do motorista logado
+      const response = await getInfoManifest(user?.id);
+      console.log("Manifestos recebidos:", response.data);
+      console.log("Quantidade de manifestos:", response.data.length);
       setManifests(response.data);
       return response.data;
     } catch (error) {
@@ -152,7 +153,8 @@ export function ManifestScreen() {
   const onRefresh = async () => {
     setRefreshing(true);
     try {
-      const response = await getInfoManifest();
+      // Passar o id_motorista para filtrar apenas os manifestos do motorista logado
+      const response = await getInfoManifest(user?.id);
       setManifests(response.data);
     } catch (error) {
       console.error("Error refreshing data:", error);
@@ -163,7 +165,7 @@ export function ManifestScreen() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [user?.id]); // Adicionar user?.id como dependência para recarregar quando o usuário mudar
 
   const filteredManifests = manifests.filter((manifest) => {
     // Se houver manifestoId na rota, filtra por ele
@@ -182,6 +184,9 @@ export function ManifestScreen() {
     }
     return true;
   });
+
+  console.log("Manifests state:", manifests);
+  console.log("Filtered manifests:", filteredManifests);
 
   const handleNavigateToScreen = (tipo: string, manifestoId: number) => {
     setModalVisible(false);
@@ -219,6 +224,57 @@ export function ManifestScreen() {
     }
   };
 
+  const handleStartTransport = async () => {
+    if (!pendingManifestId || !user?.id || !dataSaida || !horaSaida) return;
+    setSending(true);
+    try {
+      console.log("Iniciando transporte com dados:", {
+        id_manifesto: pendingManifestId,
+        id_motorista: user.id,
+        data_saida: dataSaida,
+        hora_saida: horaSaida,
+      });
+
+      const response = await api.post("/transporte/iniciar", {
+        id_manifesto: pendingManifestId,
+        id_motorista: user.id,
+        data_saida: dataSaida,
+        hora_saida: horaSaida,
+      });
+
+      console.log("Resposta do servidor:", response.data);
+
+      if (response.data && response.data.success) {
+        setShowStartTransportModal(false);
+        setPendingManifestId(null);
+        setDataSaida("");
+        setHoraSaida("");
+        await fetchData();
+        alert("Transporte iniciado com sucesso!");
+      } else {
+        alert(response.data?.error || "Erro ao iniciar transporte.");
+      }
+    } catch (error: any) {
+      console.error("Erro detalhado:", error);
+      console.error("Status do erro:", error.response?.status);
+      console.error("Dados do erro:", error.response?.data);
+
+      if (error.response?.status === 403) {
+        alert(
+          "Erro 403: Acesso negado. Verifique se você tem permissão para iniciar transportes.",
+        );
+      } else if (error.response?.status === 400) {
+        alert("Erro 400: Dados inválidos. Verifique os dados enviados.");
+      } else {
+        alert(
+          `Erro ao iniciar transporte: ${error.message || "Tente novamente."}`,
+        );
+      }
+    } finally {
+      setSending(false);
+    }
+  };
+
   if (loading) {
     return (
       <ContainerAppCpX>
@@ -228,6 +284,14 @@ export function ManifestScreen() {
       </ContainerAppCpX>
     );
   }
+
+  console.log(
+    "Rendering with manifests:",
+    manifests.length,
+    "filtered:",
+    filteredManifests.length,
+  );
+
   return (
     <ContainerAppCpX>
       <View className="flex-1">
@@ -333,11 +397,20 @@ export function ManifestScreen() {
                   <View className="flex-row items-center gap-3">
                     <Button
                       className="h-[30px] w-[80px] items-center justify-center rounded-lg"
-                      onPress={() =>
-                        handleNavigateToScreen("entrega", item.id_manifesto)
-                      }
+                      onPress={() => {
+                        console.log(
+                          "Status do manifesto:",
+                          item.status_nome,
+                          item,
+                        );
+                        if (item.status_nome === "EM TRANSITO") {
+                          handleNavigateToScreen("entrega", item.id_manifesto);
+                        } else {
+                          setPendingManifestId(item.id_manifesto);
+                          setShowStartTransportModal(true);
+                        }
+                      }}
                       style={{ backgroundColor: "#439943" }}
-                      disabled={isButtonDisabled(item.entrega)}
                     >
                       <P className="text-xs text-white">
                         {getButtonText(item.entrega)}
@@ -351,9 +424,14 @@ export function ManifestScreen() {
                   <View className="flex-row items-center gap-3">
                     <Button
                       className="h-[30px] w-[80px] items-center justify-center rounded-lg"
-                      onPress={() =>
-                        handleNavigateToScreen("coleta", item.id_manifesto)
-                      }
+                      onPress={() => {
+                        if (item.status_nome === "EM TRANSITO") {
+                          handleNavigateToScreen("coleta", item.id_manifesto);
+                        } else {
+                          setPendingManifestId(item.id_manifesto);
+                          setShowStartTransportModal(true);
+                        }
+                      }}
                       style={{ backgroundColor: "#ED9C2A" }}
                       disabled={isButtonDisabled(item.coleta)}
                     >
@@ -369,9 +447,14 @@ export function ManifestScreen() {
                   <View className="flex-row items-center gap-3">
                     <Button
                       className="h-[30px] w-[80px] items-center justify-center rounded-lg"
-                      onPress={() =>
-                        handleNavigateToScreen("despacho", item.id_manifesto)
-                      }
+                      onPress={() => {
+                        if (item.status_nome === "EM TRANSITO") {
+                          handleNavigateToScreen("despacho", item.id_manifesto);
+                        } else {
+                          setPendingManifestId(item.id_manifesto);
+                          setShowStartTransportModal(true);
+                        }
+                      }}
                       style={{ backgroundColor: "#2E6EA5" }}
                       disabled={isButtonDisabled(item.despacho)}
                     >
@@ -387,9 +470,14 @@ export function ManifestScreen() {
                   <View className="flex-row items-center gap-3">
                     <Button
                       className="h-[30px] w-[80px] items-center justify-center rounded-lg"
-                      onPress={() =>
-                        handleNavigateToScreen("retirada", item.id_manifesto)
-                      }
+                      onPress={() => {
+                        if (item.status_nome === "EM TRANSITO") {
+                          handleNavigateToScreen("retirada", item.id_manifesto);
+                        } else {
+                          setPendingManifestId(item.id_manifesto);
+                          setShowStartTransportModal(true);
+                        }
+                      }}
                       style={{ backgroundColor: "#28A4C9" }}
                       disabled={isButtonDisabled(item.retirada)}
                     >
@@ -405,12 +493,17 @@ export function ManifestScreen() {
                   <View className="flex-row items-center gap-3">
                     <Button
                       className="h-[30px] w-[80px] items-center justify-center rounded-lg"
-                      onPress={() =>
-                        handleNavigateToScreen(
-                          "transferencia",
-                          item.id_manifesto,
-                        )
-                      }
+                      onPress={() => {
+                        if (item.status_nome === "EM TRANSITO") {
+                          handleNavigateToScreen(
+                            "transferencia",
+                            item.id_manifesto,
+                          );
+                        } else {
+                          setPendingManifestId(item.id_manifesto);
+                          setShowStartTransportModal(true);
+                        }
+                      }}
                       style={{ backgroundColor: "#EEEEEE" }}
                       disabled={isButtonDisabled(item.transferencia)}
                     >
@@ -487,46 +580,14 @@ export function ManifestScreen() {
                     <P>X</P>
                   </TouchableOpacity>
                 </View>
-
-                {ocorrencias.map((ocorrencia, index) => (
-                  <View
-                    key={index}
-                    className="mb-5 rounded-lg bg-white p-4 shadow"
-                  >
-                    <View className="mb-2 border-b border-gray-200 pb-2">
-                      <H4 className="text-blue-900">Ocorrência #{index + 1}</H4>
-                    </View>
-
-                    {Object.entries(ocorrencia).map(([key, value]) => {
-                      if (key === "tipo" && value) {
-                        return (
-                          <View key={key} className="mt-4">
-                            <Button
-                              onPress={() => {
-                                setModalVisible(false);
-                              }}
-                              className="bg-blue-900"
-                            >
-                              <P className="text-white">Ir para {value}</P>
-                            </Button>
-                          </View>
-                        );
-                      }
-                      return (
-                        <View key={key} className="flex-row py-1">
-                          <P className="font-bold capitalize">
-                            {key.replace("_", " ")}:{" "}
-                          </P>
-                          <P>{String(value)}</P>
-                        </View>
-                      );
-                    })}
-                  </View>
-                ))}
+                <View>
+                  <P>Detalhes das ocorrências aqui...</P>
+                </View>
               </ScrollView>
             </BottomSheetView>
           </BottomSheet>
         )}
+
         <Modal
           visible={showStartTransportModal}
           transparent
@@ -549,149 +610,131 @@ export function ManifestScreen() {
                 padding: 20,
               }}
             >
-              <H4 className="mb-4 text-center">Iniciar Transporte</H4>
-              <View style={{ marginBottom: 12 }}>
-                <Text>Data saída:</Text>
-                <TouchableOpacity
-                  onPress={() => setShowDatePicker(true)}
+              <H3 className="mb-4 text-center">Iniciar Transporte</H3>
+              <P>Data Saída:</P>
+              <TouchableOpacity
+                onPress={() => setShowDatePicker(true)}
+                activeOpacity={0.7}
+              >
+                <TextInput
+                  className={`h-12 rounded-lg border px-4`}
                   style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    marginTop: 4,
+                    borderColor: "#ccc",
+                    borderWidth: 1,
+                    marginBottom: 10,
                   }}
-                  activeOpacity={0.7}
-                >
-                  <TextInput
-                    value={dataSaida}
-                    editable={false}
-                    placeholder="AAAA-MM-DD"
-                    style={{
-                      borderWidth: 1,
-                      borderColor: "#ccc",
-                      borderRadius: 6,
-                      padding: 8,
-                      flex: 1,
-                      color: dataSaida ? "#000" : "#888",
-                    }}
-                    pointerEvents="none"
-                  />
-                </TouchableOpacity>
-                <CustomDateTimePicker
-                  visible={showDatePicker}
-                  mode="date"
-                  onConfirm={(date) => {
-                    setShowDatePicker(false);
-                    const formatted = date.toISOString().split("T")[0];
-                    setDataSaida(formatted);
-                  }}
-                  onCancel={() => setShowDatePicker(false)}
-                  initialDate={dataSaida ? new Date(dataSaida) : undefined}
-                />
-              </View>
-              <View style={{ marginBottom: 12 }}>
-                <Text>Hora saída:</Text>
-                <TouchableOpacity
-                  onPress={() => setShowTimePicker(true)}
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    marginTop: 4,
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <TextInput
-                    value={horaSaida}
-                    editable={false}
-                    placeholder="HH:MM"
-                    style={{
-                      borderWidth: 1,
-                      borderColor: "#ccc",
-                      borderRadius: 6,
-                      padding: 8,
-                      flex: 1,
-                      color: horaSaida ? "#000" : "#888",
-                    }}
-                    pointerEvents="none"
-                  />
-                </TouchableOpacity>
-                <CustomDateTimePicker
-                  visible={showTimePicker}
-                  mode="time"
-                  onConfirm={(date) => {
-                    setShowTimePicker(false);
-                    const formatted = date.toTimeString().slice(0, 5);
-                    setHoraSaida(formatted);
-                  }}
-                  onCancel={() => setShowTimePicker(false)}
-                  initialDate={
-                    horaSaida
-                      ? (() => {
-                          const [h, m] = horaSaida.split(":");
-                          const d = new Date();
-                          d.setHours(Number(h));
-                          d.setMinutes(Number(m));
-                          d.setSeconds(0);
-                          d.setMilliseconds(0);
-                          return d;
-                        })()
-                      : undefined
+                  value={
+                    dataSaida ? dataSaida.split("-").reverse().join("/") : ""
                   }
+                  editable={false}
+                  placeholder="DD/MM/AAAA"
+                  pointerEvents="none"
                 />
-              </View>
+              </TouchableOpacity>
+              <CustomDateTimePicker
+                visible={showDatePicker}
+                mode="date"
+                onConfirm={(date) => {
+                  setShowDatePicker(false);
+                  const formatted = date.toISOString().split("T")[0];
+                  setDataSaida(formatted);
+                }}
+                onCancel={() => setShowDatePicker(false)}
+                initialDate={
+                  dataSaida
+                    ? (() => {
+                        const [y, m, d] = dataSaida.split("-");
+                        return new Date(`${y}-${m}-${d}`);
+                      })()
+                    : undefined
+                }
+              />
+
+              <P>Hora Saída:</P>
+              <TouchableOpacity
+                onPress={() => setShowTimePicker(true)}
+                activeOpacity={0.7}
+              >
+                <TextInput
+                  className={`h-12 rounded-lg border px-4`}
+                  style={{
+                    borderColor: "#ccc",
+                    borderWidth: 1,
+                    marginBottom: 20,
+                  }}
+                  value={horaSaida}
+                  editable={false}
+                  placeholder="HH:MM"
+                  pointerEvents="none"
+                />
+              </TouchableOpacity>
+              <CustomDateTimePicker
+                visible={showTimePicker}
+                mode="time"
+                onConfirm={(date) => {
+                  setShowTimePicker(false);
+                  const formatted = date.toTimeString().slice(0, 5);
+                  setHoraSaida(formatted);
+                }}
+                onCancel={() => setShowTimePicker(false)}
+                initialDate={
+                  horaSaida
+                    ? (() => {
+                        const [h, m] = horaSaida.split(":");
+                        const d = new Date();
+                        d.setHours(Number(h));
+                        d.setMinutes(Number(m));
+                        d.setSeconds(0);
+                        d.setMilliseconds(0);
+                        return d;
+                      })()
+                    : undefined
+                }
+              />
               <View
                 style={{
                   flexDirection: "row",
-                  justifyContent: "space-between",
-                  marginTop: 16,
+                  justifyContent: "center",
+                  gap: 20,
                 }}
               >
                 <Button
                   style={{
-                    backgroundColor: "#ED9C2A",
-                    flex: 1,
-                    marginRight: 8,
+                    backgroundColor:
+                      sending || !dataSaida || !horaSaida
+                        ? "#a5a5d6"
+                        : "#1e3a8a",
+                    borderRadius: 4,
+                    width: 110,
+                    height: 36,
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                  onPress={handleStartTransport}
+                  disabled={sending || !dataSaida || !horaSaida}
+                >
+                  <P
+                    style={{ color: "#fff", fontWeight: "bold", fontSize: 16 }}
+                  >
+                    SALVAR
+                  </P>
+                </Button>
+                <Button
+                  style={{
+                    backgroundColor: "#1e3a8a",
+                    borderRadius: 4,
+                    width: 110,
+                    height: 36,
+                    justifyContent: "center",
+                    alignItems: "center",
                   }}
                   onPress={() => setShowStartTransportModal(false)}
                 >
-                  <H3 className="text-base font-bold text-white">Voltar</H3>
-                </Button>
-                <Button
-                  style={{ backgroundColor: "#1e40af", flex: 1, marginLeft: 8 }}
-                  disabled={sending || !dataSaida || !horaSaida}
-                  onPress={async () => {
-                    if (
-                      !pendingManifestId ||
-                      !user?.id ||
-                      !dataSaida ||
-                      !horaSaida
-                    )
-                      return;
-                    setSending(true);
-                    try {
-                      await api.post("/transporte/iniciar", {
-                        id_manifesto: pendingManifestId,
-                        id_motorista: user.id,
-                        data_saida: dataSaida,
-                        hora_saida: horaSaida,
-                      });
-                      setShowStartTransportModal(false);
-                      setPendingManifestId(null);
-                      setDataSaida("");
-                      setHoraSaida("");
-                      const novosManifests = await fetchData(); // Aguarda atualizar a lista e pega o novo array
-                      const manifestoAtualizado = novosManifests.find(
-                        (m) => m.id_manifesto === pendingManifestId,
-                      );
-                      if (manifestoAtualizado) {
-                      }
-                    } catch {
-                      alert("Erro ao iniciar transporte.");
-                    } finally {
-                      setSending(false);
-                    }
-                  }}
-                >
-                  <H3 className="text-base font-bold text-white">Salvar</H3>
+                  <P
+                    style={{ color: "#fff", fontWeight: "bold", fontSize: 16 }}
+                  >
+                    VOLTAR
+                  </P>
                 </Button>
               </View>
             </View>

@@ -7,7 +7,8 @@
     "local": "Cia teste de sistema",
     "cidade": "JUNDIAÍ",
     "uf": "SP",
-    "status": "OUTRO"
+    "status": "OUTRO",
+    "tipo_acao": 1
   },
   {
     "minuta_numero": 46,
@@ -17,7 +18,8 @@
     "local": "Cia teste de sistema",
     "cidade": "JUNDIAÍ",
     "uf": "SP",
-    "status": "OUTRO"
+    "status": "OUTRO",
+    "tipo_acao": 4
   },
   {
     "minuta_numero": 45,
@@ -27,7 +29,8 @@
     "local": "Cia teste de sistema",
     "cidade": "JUNDIAÍ",
     "uf": "SP",
-    "status": "OUTRO"
+    "status": "OUTRO",
+    "tipo_acao": 8
   },
   {
     "minuta_numero": 44,
@@ -37,7 +40,8 @@
     "local": "Cia teste de sistema",
     "cidade": "JUNDIAÍ",
     "uf": "SP",
-    "status": "OUTRO"
+    "status": "OUTRO",
+    "tipo_acao": 1
   },
   {
     "minuta_numero": 43,
@@ -47,7 +51,8 @@
     "local": "Cia teste de sistema",
     "cidade": "JUNDIAÍ",
     "uf": "SP",
-    "status": "OUTRO"
+    "status": "OUTRO",
+    "tipo_acao": 4
   },
   {
     "minuta_numero": 42,
@@ -57,7 +62,8 @@
     "local": "Cia teste de sistema",
     "cidade": "JUNDIAÍ",
     "uf": "SP",
-    "status": "OUTRO"
+    "status": "OUTRO",
+    "tipo_acao": 8
   },
   {
     "minuta_numero": 41,
@@ -67,7 +73,8 @@
     "local": "Cia teste de sistema",
     "cidade": "JUNDIAÍ",
     "uf": "SP",
-    "status": "OUTRO"
+    "status": "OUTRO",
+    "tipo_acao": 1
   },
   {
     "minuta_numero": 40,
@@ -77,7 +84,8 @@
     "local": "Cia teste de sistema",
     "cidade": "JUNDIAÍ",
     "uf": "SP",
-    "status": "OUTRO"
+    "status": "OUTRO",
+    "tipo_acao": 4
   },
   {
     "minuta_numero": 39,
@@ -87,7 +95,8 @@
     "local": "Cia teste de sistema",
     "cidade": "JUNDIAÍ",
     "uf": "SP",
-    "status": "OUTRO"
+    "status": "OUTRO",
+    "tipo_acao": 8
   },
   {
     "minuta_numero": 38,
@@ -97,7 +106,8 @@
     "local": "Cia teste de sistema",
     "cidade": "JUNDIAÍ",
     "uf": "SP",
-    "status": "OUTRO"
+    "status": "OUTRO",
+    "tipo_acao": 1
   },
   {
     "minuta_numero": 37,
@@ -107,7 +117,8 @@
     "local": "Cia teste de sistema",
     "cidade": "JUNDIAÍ",
     "uf": "SP",
-    "status": "OUTRO"
+    "status": "OUTRO",
+    "tipo_acao": 4
   },
   {
     "minuta_numero": 36,
@@ -117,7 +128,8 @@
     "local": "Cia teste de sistema",
     "cidade": "JUNDIAÍ",
     "uf": "SP",
-    "status": "OUTRO"
+    "status": "OUTRO",
+    "tipo_acao": 8
   },
   {
     "minuta_numero": 35,
@@ -127,6 +139,7 @@
     "local": "Cia teste de sistema",
     "cidade": "JUNDIAÍ",
     "uf": "SP",
-    "status": "OUTRO"
+    "status": "OUTRO",
+    "tipo_acao": 1
   }
 ]

@@ -24,8 +24,9 @@ import {
   updateOcorrenciaEntrega,
   deleteOcorrenciaEntrega,
 } from "@/service/services";
+import { controlarBotaoOcorrencia, converterTipoMovimento } from "@/lib/utils";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
-import { useRoute, RouteProp } from "@react-navigation/native";
+import { useRoute, RouteProp, useNavigation } from "@react-navigation/native";
 import { Check, ChevronDown, Trash2 } from "lucide-react-native";
 import { DetailsBottomSheet } from "@/components/DetailsBottomSheet";
 import { CustomDateTimePicker } from "@components/DateTimePickerModal";
@@ -35,8 +36,7 @@ import {
   GenericListCardConfigs,
 } from "@components/GenericListCard";
 import { CustomModal } from "@components/CustomModal";
-import * as DocumentPicker from "expo-document-picker";
-import { Portal } from "@rn-primitives/portal";
+import { FileUpload } from "@components/FileUpload";
 
 type DeliveryScreenParams = {
   manifestoId: string;
@@ -47,7 +47,16 @@ type DeliveryScreenRouteProp = RouteProp<
   "params"
 >;
 
+// Função utilitária para cor da borda dos campos obrigatórios
+function getInputBorderColor(
+  value: string | number | null | undefined,
+  obrigatorio: boolean,
+) {
+  return obrigatorio && !value ? "#ef4444" : "#d1d5db"; // red-500 ou gray-300
+}
+
 export function DeliveryScreen() {
+  const navigation = useNavigation();
   const route = useRoute<DeliveryScreenRouteProp>();
   const manifestoId = route.params?.manifestoId;
   const [entregas, setEntregas] = useState<deliveryDTO[]>([]);
@@ -108,6 +117,14 @@ export function DeliveryScreen() {
     hora: string;
   }>(null);
 
+  // Calcular se pode excluir ocorrência baseado no tipo_acao do item selecionado
+  const podeExcluirOcorrencia = useMemo(() => {
+    if (!selectedItem) return false;
+    const tipoMovimento = converterTipoMovimento("delivery");
+    const tipoAcao = selectedItem.tipo_acao;
+    return controlarBotaoOcorrencia(tipoMovimento, tipoAcao);
+  }, [selectedItem]);
+
   const [recebedor, setRecebedor] = useState("");
   const [documentoRecebedor, setDocumentoRecebedor] = useState("");
   const [idTipoRecebedor, setIdTipoRecebedor] = useState<number | null>(null);
@@ -143,17 +160,9 @@ export function DeliveryScreen() {
     }
   }, [manifestoId]);
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    try {
-      const response = await getInfoEntrega(manifestoId);
-      setEntregas(response.data);
-    } catch (error) {
-      console.error("Error refreshing data:", error);
-    } finally {
-      setRefreshing(false);
-    }
-  };
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleLancarOcorrencia = async (
     documentoId: number,
@@ -165,28 +174,29 @@ export function DeliveryScreen() {
     bottomSheetRef.current?.expand();
   };
 
-  // Função para selecionar arquivo
-  const handleSelectFile = async () => {
-    try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: ["image/*", "application/pdf"],
-        copyToCacheDirectory: true,
-      });
+  // Função para validar se todos os campos obrigatórios estão preenchidos
+  const isFormValid = useMemo(() => {
+    // Campos obrigatórios básicos
+    const basicFieldsValid = selectedOcorrencia && data && hora;
 
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        const file = result.assets[0];
-        setComprovante({
-          uri: file.uri,
-          name: file.name,
-          type: file.mimeType,
-          size: file.size,
-        });
-      }
-    } catch (error) {
-      console.error("Erro ao selecionar arquivo:", error);
-      alert("Erro ao selecionar arquivo. Tente novamente.");
+    // Se não são campos básicos válidos, retorna false
+    if (!basicFieldsValid) return false;
+
+    // Validação adicional para "Entrega realizado normalmente"
+    if (selectedOcorrencia === "Entrega realizado normalmente") {
+      return recebedor && documentoRecebedor && idTipoRecebedor && comprovante;
     }
-  };
+
+    return true;
+  }, [
+    selectedOcorrencia,
+    data,
+    hora,
+    recebedor,
+    documentoRecebedor,
+    idTipoRecebedor,
+    comprovante,
+  ]);
 
   const handleSalvarOcorrencia = async () => {
     try {
@@ -375,6 +385,7 @@ export function DeliveryScreen() {
         const response = await getDetalhesEntrega(String(selectedItem.frete));
         setDetalhesEntrega(response.data);
       }
+      await fetchData();
       setDeleteModal(null);
       Alert.alert("Sucesso", "Ocorrência excluída com sucesso!");
     } catch (error) {
@@ -386,10 +397,6 @@ export function DeliveryScreen() {
       );
     }
   };
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
 
   if (loading) {
     return (
@@ -455,7 +462,7 @@ export function DeliveryScreen() {
           data={entregas}
           config={GenericListCardConfigs.delivery}
           refreshing={refreshing}
-          onRefresh={onRefresh}
+          onRefresh={fetchData}
           selectedItems={selectedDocumentos}
           setSelectedItems={setSelectedDocumentos}
           onOpenDetails={(item) => handleOpenDetalhes(item as deliveryDTO)}
@@ -504,21 +511,28 @@ export function DeliveryScreen() {
               header: "Excluir",
               accessor: "actions",
               flex: 1,
-              render: (item) => (
-                <TouchableOpacity
-                  onPress={() =>
-                    setDeleteModal({
-                      id: item.id,
-                      numero: item.numero,
-                      ocorrencia: item.ocorrencia,
-                      data: item.data,
-                      hora: item.hora,
-                    })
-                  }
-                >
-                  <Trash2 width={18} height={18} color="#ff0000" />
-                </TouchableOpacity>
-              ),
+              render: (item) =>
+                podeExcluirOcorrencia ? (
+                  <TouchableOpacity
+                    onPress={() =>
+                      setDeleteModal({
+                        id: item.id,
+                        numero: item.numero,
+                        ocorrencia: item.ocorrencia,
+                        data: item.data,
+                        hora: item.hora,
+                      })
+                    }
+                  >
+                    <Trash2 width={18} height={18} color="#ff0000" />
+                  </TouchableOpacity>
+                ) : (
+                  <View
+                    style={{ alignItems: "center", justifyContent: "center" }}
+                  >
+                    <P style={{ color: "#999", fontSize: 12 }}>-</P>
+                  </View>
+                ),
             },
           ]}
           data={detalhesEntrega?.ocorrencias || []}
@@ -624,8 +638,15 @@ export function DeliveryScreen() {
                 <View className="mb-4">
                   <P className="mb-2">Ocorrência:</P>
                   <Pressable
-                    className="h-12 justify-center rounded-lg border border-gray-300 px-4"
-                    style={{ position: "relative" }}
+                    className={`h-12 justify-center rounded-lg border px-4`}
+                    style={{
+                      position: "relative",
+                      borderColor: getInputBorderColor(
+                        selectedOcorrencia,
+                        true,
+                      ),
+                      borderWidth: 1,
+                    }}
                     onPress={() => setIsOcorrenciaSheetOpen(true)}
                   >
                     <P style={{ paddingRight: 32 }}>
@@ -651,7 +672,11 @@ export function DeliveryScreen() {
                     activeOpacity={0.7}
                   >
                     <TextInput
-                      className="h-12 rounded-lg border border-gray-300 px-4"
+                      className={`h-12 rounded-lg border px-4`}
+                      style={{
+                        borderColor: getInputBorderColor(data, true),
+                        borderWidth: 1,
+                      }}
                       value={data ? data.split("-").reverse().join("/") : ""}
                       editable={false}
                       placeholder="DD/MM/AAAA"
@@ -663,7 +688,6 @@ export function DeliveryScreen() {
                     mode="date"
                     onConfirm={(date) => {
                       setShowDatePicker(false);
-                      // Salve no formato YYYY-MM-DD
                       const formatted = date.toISOString().split("T")[0];
                       setData(formatted);
                     }}
@@ -671,7 +695,6 @@ export function DeliveryScreen() {
                     initialDate={
                       data
                         ? (() => {
-                            // data está em YYYY-MM-DD
                             const [y, m, d] = data.split("-");
                             return new Date(`${y}-${m}-${d}`);
                           })()
@@ -687,7 +710,11 @@ export function DeliveryScreen() {
                     activeOpacity={0.7}
                   >
                     <TextInput
-                      className="h-12 rounded-lg border border-gray-300 px-4"
+                      className={`h-12 rounded-lg border px-4`}
+                      style={{
+                        borderColor: getInputBorderColor(hora, true),
+                        borderWidth: 1,
+                      }}
                       value={hora}
                       editable={false}
                       placeholder="HH:MM"
@@ -699,7 +726,6 @@ export function DeliveryScreen() {
                     mode="time"
                     onConfirm={(date) => {
                       setShowTimePicker(false);
-                      // Formatar para HH:MM
                       const formatted = date.toTimeString().slice(0, 5);
                       setHora(formatted);
                     }}
@@ -737,7 +763,11 @@ export function DeliveryScreen() {
                     <View className="mb-4">
                       <P className="mb-2">Recebedor:</P>
                       <TextInput
-                        className="h-12 rounded-lg border border-gray-300 px-4"
+                        className={`h-12 rounded-lg border px-4`}
+                        style={{
+                          borderColor: getInputBorderColor(recebedor, true),
+                          borderWidth: 1,
+                        }}
                         value={recebedor}
                         onChangeText={setRecebedor}
                         placeholder="Digite o nome do recebedor"
@@ -746,7 +776,14 @@ export function DeliveryScreen() {
                     <View className="mb-4">
                       <P className="mb-2">Documento do Recebedor:</P>
                       <TextInput
-                        className="h-12 rounded-lg border border-gray-300 px-4"
+                        className={`h-12 rounded-lg border px-4`}
+                        style={{
+                          borderColor: getInputBorderColor(
+                            documentoRecebedor,
+                            true,
+                          ),
+                          borderWidth: 1,
+                        }}
                         value={documentoRecebedor}
                         onChangeText={setDocumentoRecebedor}
                         placeholder="Digite o documento do recebedor"
@@ -755,8 +792,15 @@ export function DeliveryScreen() {
                     <View className="mb-4">
                       <P className="mb-2">Tipo de Recebedor:</P>
                       <Pressable
-                        className="h-12 justify-center rounded-lg border border-gray-300 px-4"
-                        style={{ position: "relative" }}
+                        className={`h-12 justify-center rounded-lg border px-4`}
+                        style={{
+                          position: "relative",
+                          borderColor: getInputBorderColor(
+                            idTipoRecebedor,
+                            true,
+                          ),
+                          borderWidth: 1,
+                        }}
                         onPress={() => setIsTipoRecebedorSheetOpen(true)}
                       >
                         <P style={{ paddingRight: 32 }}>
@@ -778,45 +822,64 @@ export function DeliveryScreen() {
                         </View>
                       </Pressable>
                     </View>
-                    <View className="mb-4 flex-row items-center">
-                      <Pressable
-                        onPress={handleSelectFile}
-                        style={{
-                          borderWidth: 2,
-                          borderColor: "red",
-                          backgroundColor: "#f5f5f5",
-                          paddingHorizontal: 8,
-                          paddingVertical: 4,
-                          borderRadius: 4,
-                          marginRight: 8,
-                        }}
-                      >
-                        <P style={{ color: "#222", fontWeight: "bold" }}>
-                          Escolher Ficheiros
-                        </P>
-                      </Pressable>
-                      <P style={{ color: "#222" }}>
-                        {comprovante
-                          ? comprovante.name
-                          : "Nenhum ficheiro selecionado"}
-                      </P>
-                    </View>
+                    <FileUpload
+                      onFileSelect={setComprovante}
+                      selectedFile={comprovante}
+                      isRequired={
+                        selectedOcorrencia === "Entrega realizado normalmente"
+                      }
+                      getInputBorderColor={getInputBorderColor}
+                    />
                   </>
                 )}
 
-                <View className="flex-row justify-between gap-4">
+                <View className="flex-row justify-end gap-2">
+                  <Button
+                    style={{
+                      backgroundColor: isFormValid ? "#1e3a8a" : "#a5a5d6",
+                      borderRadius: 4,
+                      width: 110,
+                      height: 36,
+                      justifyContent: "center",
+                      alignItems: "center",
+                    }}
+                    onPress={isFormValid ? handleSalvarOcorrencia : undefined}
+                    disabled={!isFormValid}
+                  >
+                    <P
+                      style={{
+                        color: "#fff",
+                        fontWeight: "bold",
+                        fontSize: 16,
+                      }}
+                    >
+                      SALVAR
+                    </P>
+                  </Button>
                   <BackButton
-                    className="flex-1"
+                    style={{
+                      backgroundColor: "#1e3a8a",
+                      borderRadius: 4,
+                      width: 110,
+                      height: 36,
+                      justifyContent: "center",
+                      alignItems: "center",
+                    }}
                     onPress={() => {
                       bottomSheetRef.current?.close();
                       setIsBottomSheetOpen(false);
                     }}
                   >
-                    <P className="text-white">Voltar</P>
+                    <P
+                      style={{
+                        color: "#fff",
+                        fontWeight: "bold",
+                        fontSize: 16,
+                      }}
+                    >
+                      VOLTAR
+                    </P>
                   </BackButton>
-                  <Button className="flex-1" onPress={handleSalvarOcorrencia}>
-                    <P className="text-white">Salvar</P>
-                  </Button>
                 </View>
               </ScrollView>
             </BottomSheetView>

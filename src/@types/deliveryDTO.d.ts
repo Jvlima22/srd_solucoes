@@ -7,4 +7,5 @@ interface deliveryDTO {
   uf: string;
   status: string;
   ocorrencia: string;
+  tipo_acao: number;
 }

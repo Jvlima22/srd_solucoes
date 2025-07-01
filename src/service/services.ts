@@ -11,12 +11,14 @@ const DEV = false;
 const timeout = 900;
 
 const ROUTE_PATH_AUTH = "/login";
+const ROUTE_PATH_UNIDADES = "/unidades";
 const ROUTE_PATH_ENTREGA = "/info-entrega";
 const ROUTE_PATH_COLETA = "/info-coleta";
 const ROUTE_PATH_DESPACHO = "/info-despacho";
 const ROUTE_PATH_RETIRADA = "/info-retirada";
 const ROUTE_PATH_TRANSFERENCIA = "/info-transferencia";
-const ROUTE_PATH_MANIFEST = "/manifestos";
+const ROUTE_PATH_MANIFEST = "/motoristas/manifestos";
+const ROUTE_PATH_TRANSPORTE_INICIAR = "/transporte/iniciar";
 const ROUTE_PATH_OCORRENCIA_ENTREGA = "/ocorrencia/entrega";
 const ROUTE_PATH_OCORRENCIA_COLETA = "/ocorrencia/coleta";
 const ROUTE_PATH_OCORRENCIA_RETIRADA = "/ocorrencia/retirada";
@@ -51,9 +53,33 @@ const auth_login = async (unidade: string, login: string, senha: string) => {
   }
 
   return await api.post<LoginReponse>(ROUTE_PATH_AUTH, {
-    unidade,
+    unidade: unidade.toUpperCase(),
     login,
     senha,
+  });
+};
+
+const getUnidades = async (search?: string) => {
+  if (DEV) {
+    console.log("Mocking unidades API response");
+    const response = {
+      data: {
+        unidades: [
+          { id: 1, nome: "AGENTE", identificador: "AGENTE" },
+          { id: 2, nome: "FILIAL SP", identificador: "FILIAL_SP" },
+          { id: 3, nome: "FILIAL RJ", identificador: "FILIAL_RJ" },
+        ],
+      },
+      status: 200,
+      statusText: "OK",
+    };
+    await new Promise((resolve) => setTimeout(resolve, timeout));
+    return response as AxiosResponse<{ unidades: Unidade[] }>;
+  }
+
+  const params = search ? { search } : {};
+  return await api.get<{ unidades: Unidade[] }>(ROUTE_PATH_UNIDADES, {
+    params,
   });
 };
 
@@ -170,7 +196,9 @@ const getInfoTransferencia = async (
   );
 };
 
-const getInfoManifest = async (): Promise<AxiosResponse<manifestDTO[]>> => {
+const getInfoManifest = async (
+  id_motorista?: number,
+): Promise<AxiosResponse<manifestDTO[]>> => {
   if (DEV) {
     console.log("Mocking API response");
     const response = {
@@ -182,7 +210,65 @@ const getInfoManifest = async (): Promise<AxiosResponse<manifestDTO[]>> => {
     return response as AxiosResponse<manifestDTO[]>;
   }
 
-  return await api.get<manifestDTO[]>(ROUTE_PATH_MANIFEST);
+  // Usar diretamente a rota /manifestos que retorna todos os manifestos
+  const url = "/manifestos";
+  console.log("Fetching manifestos with URL:", url);
+
+  try {
+    const response = await api.get(url);
+    console.log("Raw manifestos response:", response.data);
+
+    // Garantir que a resposta seja um array
+    const manifestos = Array.isArray(response.data) ? response.data : [];
+    console.log("Processed manifestos:", manifestos);
+
+    return {
+      ...response,
+      data: manifestos,
+    } as AxiosResponse<manifestDTO[]>;
+  } catch (error) {
+    console.error("Error in getInfoManifest:", error);
+    throw error;
+  }
+};
+
+const iniciarTransporte = async (
+  id_manifesto: number,
+  id_motorista: number,
+  data_saida: string,
+  hora_saida: string,
+): Promise<AxiosResponse> => {
+  if (DEV) {
+    console.log("Mocking iniciar transporte");
+    const response = {
+      data: {
+        success: true,
+        message: "Transporte iniciado com sucesso.",
+        manifesto_id: id_manifesto,
+        new_status: 4,
+        data_saida: data_saida,
+        hora_saida: hora_saida,
+      },
+      status: 200,
+      statusText: "OK",
+    };
+    await new Promise((resolve) => setTimeout(resolve, timeout));
+    return response as AxiosResponse;
+  }
+
+  console.log("Iniciando transporte:", {
+    id_manifesto,
+    id_motorista,
+    data_saida,
+    hora_saida,
+  });
+
+  return await api.post(ROUTE_PATH_TRANSPORTE_INICIAR, {
+    id_manifesto,
+    id_motorista,
+    data_saida,
+    hora_saida,
+  });
 };
 
 // Tipos para as ocorrências baseados no servidor
@@ -505,14 +591,23 @@ const getDetalhesDespacho = async (
     console.log("Mocking API response");
     const response = {
       data: {
-        numero_minuta: "MIN001",
-        frete: despachoId,
+        numero_minuta: 12345,
+        frete: Number(despachoId),
         ocorrencias: [
           {
+            id: 1,
             documento: "DOC001",
             ocorrencia: "despacho realizado",
             data: "01/01/2024",
             hora: "10:00",
+            excluir: true,
+          },
+          {
+            id: 2,
+            documento: "DOC002",
+            ocorrencia: "em transito para despacho",
+            data: "31/12/2023",
+            hora: "14:30",
             excluir: true,
           },
         ],
@@ -684,4 +779,6 @@ export {
   deleteOcorrenciaDespacho,
   deleteOcorrenciaRetirada,
   deleteOcorrenciaTransferencia,
+  iniciarTransporte,
+  getUnidades,
 };

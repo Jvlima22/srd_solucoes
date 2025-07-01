@@ -23,6 +23,7 @@ import {
   updateOcorrenciaTransferencia,
   deleteOcorrenciaTransferencia,
 } from "@/service/services";
+import { controlarBotaoOcorrencia, converterTipoMovimento } from "@/lib/utils";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import { useRoute, RouteProp } from "@react-navigation/native";
 import { Check, ChevronDown, Trash2 } from "lucide-react-native";
@@ -44,6 +45,14 @@ type TransferScreenRouteProp = RouteProp<
   { params: TransferScreenParams },
   "params"
 >;
+
+// Função utilitária para cor da borda dos campos obrigatórios
+function getInputBorderColor(
+  value: string | number | null | undefined,
+  obrigatorio: boolean,
+) {
+  return obrigatorio && !value ? "#ef4444" : "#d1d5db"; // red-500 ou gray-300
+}
 
 export function TransferScreen() {
   const route = useRoute<TransferScreenRouteProp>();
@@ -106,12 +115,21 @@ export function TransferScreen() {
     hora: string;
   }>(null);
 
-  const fetchData = useCallback(async () => {
-    if (!manifestoId) {
-      console.error("ManifestoId is required");
-      return;
-    }
+  // Calcular se pode excluir ocorrência baseado no tipo_acao do item selecionado
+  const podeExcluirOcorrencia = useMemo(() => {
+    if (!selectedItem) return false;
+    const tipoMovimento = converterTipoMovimento("transfer");
+    const tipoAcao = selectedItem.tipo_acao;
+    return controlarBotaoOcorrencia(tipoMovimento, tipoAcao);
+  }, [selectedItem]);
 
+  // Função para validar se todos os campos obrigatórios estão preenchidos
+  const isFormValid = useMemo(() => {
+    // Campos obrigatórios: ocorrência, data e hora
+    return selectedOcorrencia && data && hora;
+  }, [selectedOcorrencia, data, hora]);
+
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const response = await getInfoTransferencia(manifestoId);
@@ -141,6 +159,7 @@ export function TransferScreen() {
   };
 
   const handleLancarOcorrencia = (item: transferenciaDTO) => {
+    setSelectedItem(item);
     setMinutaNumero(item.transferencia.toString());
     setIsBottomSheetOpen(true);
     bottomSheetRef.current?.expand();
@@ -304,7 +323,6 @@ export function TransferScreen() {
           String(selectedItem.transferencia),
           String(selectedItem.frete),
         );
-        // Ajuste: se vier response.data.detalhes, use esse array
         const detalhes = Array.isArray(response.data.detalhes)
           ? response.data.detalhes
           : response.data?.detalhes
@@ -312,7 +330,7 @@ export function TransferScreen() {
             : [];
         setDetalhesTransferencia(detalhes);
       }
-
+      await fetchData();
       Alert.alert("Sucesso", "Ocorrência excluída com sucesso!");
     } catch (error) {
       console.error("Erro ao excluir ocorrência:", error);
@@ -450,21 +468,28 @@ export function TransferScreen() {
               header: "Excluir",
               accessor: "actions",
               flex: 1,
-              render: (item) => (
-                <TouchableOpacity
-                  onPress={() =>
-                    setDeleteModal({
-                      id: item.id,
-                      documento: item.documento,
-                      ocorrencia: item.ocorrencia,
-                      data: item.data,
-                      hora: item.hora,
-                    })
-                  }
-                >
-                  <Trash2 width={18} height={18} color="#ff0000" />
-                </TouchableOpacity>
-              ),
+              render: (item) =>
+                podeExcluirOcorrencia ? (
+                  <TouchableOpacity
+                    onPress={() =>
+                      setDeleteModal({
+                        id: item.id,
+                        documento: item.documento,
+                        ocorrencia: item.ocorrencia,
+                        data: item.data,
+                        hora: item.hora,
+                      })
+                    }
+                  >
+                    <Trash2 width={18} height={18} color="#ff0000" />
+                  </TouchableOpacity>
+                ) : (
+                  <View
+                    style={{ alignItems: "center", justifyContent: "center" }}
+                  >
+                    <P style={{ color: "#999", fontSize: 12 }}>-</P>
+                  </View>
+                ),
             },
           ]}
           data={
@@ -521,7 +546,11 @@ export function TransferScreen() {
                   <P className="mb-2">Frete:</P>
                   <TextInput
                     className="h-12 rounded-lg border border-gray-300 px-4"
-                    value={isLote ? loteFretes.join(", ") : ""}
+                    value={
+                      isLote
+                        ? loteFretes.join(", ")
+                        : selectedItem?.frete?.toString() || ""
+                    }
                     editable={false}
                   />
                 </View>
@@ -529,8 +558,15 @@ export function TransferScreen() {
                 <View className="mb-4">
                   <P className="mb-2">Ocorrência:</P>
                   <Pressable
-                    className="h-12 justify-center rounded-lg border border-gray-300 px-4"
-                    style={{ position: "relative" }}
+                    className={`h-12 justify-center rounded-lg border px-4`}
+                    style={{
+                      position: "relative",
+                      borderColor: getInputBorderColor(
+                        selectedOcorrencia,
+                        true,
+                      ),
+                      borderWidth: 1,
+                    }}
                     onPress={() => setIsOcorrenciaSheetOpen(true)}
                   >
                     <P style={{ paddingRight: 32 }}>
@@ -556,7 +592,11 @@ export function TransferScreen() {
                     activeOpacity={0.7}
                   >
                     <TextInput
-                      className="h-12 rounded-lg border border-gray-300 px-4"
+                      className={`h-12 rounded-lg border px-4`}
+                      style={{
+                        borderColor: getInputBorderColor(data, true),
+                        borderWidth: 1,
+                      }}
                       value={data ? data.split("-").reverse().join("/") : ""}
                       editable={false}
                       placeholder="DD/MM/AAAA"
@@ -592,7 +632,11 @@ export function TransferScreen() {
                     activeOpacity={0.7}
                   >
                     <TextInput
-                      className="h-12 rounded-lg border border-gray-300 px-4"
+                      className={`h-12 rounded-lg border px-4`}
+                      style={{
+                        borderColor: getInputBorderColor(hora, true),
+                        borderWidth: 1,
+                      }}
                       value={hora}
                       editable={false}
                       placeholder="HH:MM"
@@ -637,19 +681,53 @@ export function TransferScreen() {
                   />
                 </View>
 
-                <View className="flex-row justify-between gap-4">
+                <View className="flex-row justify-end gap-2">
+                  <Button
+                    style={{
+                      backgroundColor: isFormValid ? "#1e3a8a" : "#a5a5d6",
+                      borderRadius: 4,
+                      width: 110,
+                      height: 36,
+                      justifyContent: "center",
+                      alignItems: "center",
+                    }}
+                    onPress={isFormValid ? handleSalvarOcorrencia : undefined}
+                    disabled={!isFormValid}
+                  >
+                    <P
+                      style={{
+                        color: "#fff",
+                        fontWeight: "bold",
+                        fontSize: 16,
+                      }}
+                    >
+                      SALVAR
+                    </P>
+                  </Button>
                   <BackButton
-                    className="flex-1"
+                    style={{
+                      backgroundColor: "#1e3a8a",
+                      borderRadius: 4,
+                      width: 110,
+                      height: 36,
+                      justifyContent: "center",
+                      alignItems: "center",
+                    }}
                     onPress={() => {
                       bottomSheetRef.current?.close();
                       setIsBottomSheetOpen(false);
                     }}
                   >
-                    <P className="text-white">Voltar</P>
+                    <P
+                      style={{
+                        color: "#fff",
+                        fontWeight: "bold",
+                        fontSize: 16,
+                      }}
+                    >
+                      VOLTAR
+                    </P>
                   </BackButton>
-                  <Button className="flex-1" onPress={handleSalvarOcorrencia}>
-                    <P className="text-white">Salvar</P>
-                  </Button>
                 </View>
               </ScrollView>
             </BottomSheetView>

@@ -24,6 +24,7 @@ import {
   getDetalhesDespacho,
   deleteOcorrenciaDespacho,
 } from "@/service/services";
+import { controlarBotaoOcorrencia, converterTipoMovimento } from "@/lib/utils";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import { useRoute, RouteProp } from "@react-navigation/native";
 
@@ -46,6 +47,14 @@ type DispatchScreenRouteProp = RouteProp<
   { params: DispatchScreenParams },
   "params"
 >;
+
+// Função utilitária para cor da borda dos campos obrigatórios
+function getInputBorderColor(
+  value: string | number | null | undefined,
+  obrigatorio: boolean,
+) {
+  return obrigatorio && !value ? "#ef4444" : "#d1d5db"; // red-500 ou gray-300
+}
 
 export function DispatchScreen() {
   const route = useRoute<DispatchScreenRouteProp>();
@@ -89,6 +98,7 @@ export function DispatchScreen() {
   const [hora, setHora] = useState("");
   const [observacao, setObservacao] = useState("");
   const [minutaNumero, setMinutaNumero] = useState("");
+  const [freteNumero, setFreteNumero] = useState("");
 
   // Estado para modal de exclusão
   const [deleteModal, setDeleteModal] = useState<null | {
@@ -99,14 +109,29 @@ export function DispatchScreen() {
     hora: string;
   }>(null);
 
+  // Calcular se pode excluir ocorrência baseado no tipo_acao do item selecionado
+  const podeExcluirOcorrencia = useMemo(() => {
+    if (!selectedItem) return false;
+    const tipoMovimento = converterTipoMovimento("dispatch");
+    const tipoAcao = selectedItem.tipo_acao;
+    return controlarBotaoOcorrencia(tipoMovimento, tipoAcao);
+  }, [selectedItem]);
+
   const ocorrencias = [
     "despacho cancelado",
     "em transito para despacho",
     "despacho realizado",
   ];
 
+  // Função para validar se todos os campos obrigatórios estão preenchidos
+  const isFormValid = useMemo(() => {
+    // Para despacho, observação é opcional
+    return Boolean(selectedOcorrencia && data && hora);
+  }, [selectedOcorrencia, data, hora]);
+
   const handleLancarOcorrencia = (item: despachoDTO) => {
     setMinutaNumero(item.minutaDespacho?.toString() || "");
+    setFreteNumero(item.frete?.toString() || "");
     setIsBottomSheetOpen(true);
     bottomSheetRef.current?.expand();
   };
@@ -153,7 +178,8 @@ export function DispatchScreen() {
   // Salvar ocorrência (individual ou em lote)
   const handleSalvarOcorrencia = async () => {
     try {
-      if (!selectedOcorrencia || !data || !hora || !observacao) {
+      // Para despacho, não exigir observacao
+      if (!selectedOcorrencia || !data || !hora) {
         alert("Por favor, preencha todos os campos obrigatórios");
         return;
       }
@@ -167,17 +193,12 @@ export function DispatchScreen() {
           });
         }
       } else {
-        // Para ocorrência individual, precisamos do frete do item selecionado
-        const selectedItem = entregas.find(
-          (item) => String(item.minutaDespacho) === minutaNumero,
-        );
-
-        if (!selectedItem) {
-          alert("Item não encontrado");
+        // Para ocorrência individual, usar o frete já capturado
+        if (!freteNumero) {
+          alert("Frete não encontrado");
           return;
         }
-
-        await updateOcorrenciaDespacho(selectedItem.frete, {
+        await updateOcorrenciaDespacho(Number(freteNumero), {
           ocorrencia: selectedOcorrencia,
           data_ocorrencia: data,
           hora_ocorrencia: hora,
@@ -191,6 +212,7 @@ export function DispatchScreen() {
       setLoteMinutas([]);
       setLoteFretes([]);
       setMinutaNumero("");
+      setFreteNumero("");
       setData("");
       setHora("");
       setObservacao("");
@@ -251,6 +273,7 @@ export function DispatchScreen() {
         const response = await getDetalhesDespacho(String(selectedItem.frete));
         setDetalhesDespacho(response.data);
       }
+      await fetchData();
       setDeleteModal(null);
       Alert.alert("Sucesso", "Ocorrência excluída com sucesso!");
     } catch (error) {
@@ -367,7 +390,7 @@ export function DispatchScreen() {
               flex: 1.8,
               render: (item) => (
                 <P style={{ textAlign: "center", color: "#222" }}>
-                  {item.data ? item.data.split("-").reverse().join("/") : ""}
+                  {item.data || ""}
                 </P>
               ),
             },
@@ -377,7 +400,7 @@ export function DispatchScreen() {
               flex: 1.1,
               render: (item) => (
                 <P style={{ textAlign: "center", color: "#222" }}>
-                  {item.hora ? item.hora.substring(0, 5) : "N/A"}
+                  {item.hora || "N/A"}
                 </P>
               ),
             },
@@ -385,30 +408,31 @@ export function DispatchScreen() {
               header: "Excluir",
               accessor: "actions",
               flex: 1,
-              render: (item) => (
-                <TouchableOpacity
-                  onPress={() =>
-                    setDeleteModal({
-                      id: item.id,
-                      documento: item.documento,
-                      ocorrencia: item.ocorrencia,
-                      data: item.data,
-                      hora: item.hora,
-                    })
-                  }
-                >
-                  <Trash2 width={18} height={18} color="#ff0000" />
-                </TouchableOpacity>
-              ),
+              render: (item) =>
+                podeExcluirOcorrencia ? (
+                  <TouchableOpacity
+                    onPress={() =>
+                      setDeleteModal({
+                        id: item.id,
+                        documento: item.documento,
+                        ocorrencia: item.ocorrencia,
+                        data: item.data,
+                        hora: item.hora,
+                      })
+                    }
+                  >
+                    <Trash2 width={18} height={18} color="#ff0000" />
+                  </TouchableOpacity>
+                ) : (
+                  <View
+                    style={{ alignItems: "center", justifyContent: "center" }}
+                  >
+                    <P style={{ color: "#999", fontSize: 12 }}>-</P>
+                  </View>
+                ),
             },
           ]}
-          data={
-            Array.isArray(detalhesDespacho)
-              ? detalhesDespacho
-              : detalhesDespacho
-                ? [detalhesDespacho]
-                : []
-          }
+          data={detalhesDespacho?.ocorrencias || []}
           isLoading={detalhesLoading}
           sheetIndex={detailsSheetIndex}
           setSheetIndex={setDetailsSheetIndex}
@@ -424,6 +448,8 @@ export function DispatchScreen() {
               setIsLote(false);
               setLoteMinutas([]);
               setLoteFretes([]);
+              setMinutaNumero("");
+              setFreteNumero("");
             }}
           >
             <BottomSheetView className="flex-1 p-4">
@@ -454,7 +480,7 @@ export function DispatchScreen() {
                   <P className="mb-2">Frete:</P>
                   <TextInput
                     className="h-12 rounded-lg border border-gray-300 px-4"
-                    value={isLote ? loteFretes.join(", ") : ""}
+                    value={isLote ? loteFretes.join(", ") : freteNumero}
                     editable={false}
                   />
                 </View>
@@ -462,8 +488,15 @@ export function DispatchScreen() {
                 <View className="mb-4">
                   <P className="mb-2">Ocorrência:</P>
                   <Pressable
-                    className="h-12 justify-center rounded-lg border border-gray-300 px-4"
-                    style={{ position: "relative" }}
+                    className={`h-12 justify-center rounded-lg border px-4`}
+                    style={{
+                      position: "relative",
+                      borderColor: getInputBorderColor(
+                        selectedOcorrencia,
+                        true,
+                      ),
+                      borderWidth: 1,
+                    }}
                     onPress={() => setIsOcorrenciaSheetOpen(true)}
                   >
                     <P style={{ paddingRight: 32 }}>
@@ -489,7 +522,11 @@ export function DispatchScreen() {
                     activeOpacity={0.7}
                   >
                     <TextInput
-                      className="h-12 rounded-lg border border-gray-300 px-4"
+                      className={`h-12 rounded-lg border px-4`}
+                      style={{
+                        borderColor: getInputBorderColor(data, true),
+                        borderWidth: 1,
+                      }}
                       value={data ? data.split("-").reverse().join("/") : ""}
                       editable={false}
                       placeholder="DD/MM/AAAA"
@@ -525,7 +562,11 @@ export function DispatchScreen() {
                     activeOpacity={0.7}
                   >
                     <TextInput
-                      className="h-12 rounded-lg border border-gray-300 px-4"
+                      className={`h-12 rounded-lg border px-4`}
+                      style={{
+                        borderColor: getInputBorderColor(hora, true),
+                        borderWidth: 1,
+                      }}
                       value={hora}
                       editable={false}
                       placeholder="HH:MM"
@@ -570,19 +611,53 @@ export function DispatchScreen() {
                   />
                 </View>
 
-                <View className="flex-row justify-between gap-4">
+                <View className="flex-row justify-end gap-2">
+                  <Button
+                    style={{
+                      backgroundColor: isFormValid ? "#1e3a8a" : "#a5a5d6",
+                      borderRadius: 4,
+                      width: 110,
+                      height: 36,
+                      justifyContent: "center",
+                      alignItems: "center",
+                    }}
+                    onPress={isFormValid ? handleSalvarOcorrencia : undefined}
+                    disabled={!isFormValid}
+                  >
+                    <P
+                      style={{
+                        color: "#fff",
+                        fontWeight: "bold",
+                        fontSize: 16,
+                      }}
+                    >
+                      SALVAR
+                    </P>
+                  </Button>
                   <BackButton
-                    className="flex-1"
+                    style={{
+                      backgroundColor: "#1e3a8a",
+                      borderRadius: 4,
+                      width: 110,
+                      height: 36,
+                      justifyContent: "center",
+                      alignItems: "center",
+                    }}
                     onPress={() => {
                       bottomSheetRef.current?.close();
                       setIsBottomSheetOpen(false);
                     }}
                   >
-                    <P className="text-white">Voltar</P>
+                    <P
+                      style={{
+                        color: "#fff",
+                        fontWeight: "bold",
+                        fontSize: 16,
+                      }}
+                    >
+                      VOLTAR
+                    </P>
                   </BackButton>
-                  <Button className="flex-1" onPress={handleSalvarOcorrencia}>
-                    <P className="text-white">Salvar</P>
-                  </Button>
                 </View>
               </ScrollView>
             </BottomSheetView>
@@ -646,11 +721,7 @@ export function DispatchScreen() {
               />
               <P>Data Ocorrência:</P>
               <TextInput
-                value={
-                  deleteModal?.data
-                    ? deleteModal.data.split("-").reverse().join("/")
-                    : ""
-                }
+                value={deleteModal?.data || ""}
                 editable={false}
                 className="h-12 rounded-lg border border-gray-300 px-4"
               />
