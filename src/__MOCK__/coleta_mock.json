@@ -1,252 +1,47 @@
-[
-  {
-    "coleta": 12,
-    "totalDocumento": 0,
-    "volume": null,
-    "peso": "0",
-    "destinatario": "Cliente ID 3",
-    "cidade": "São Paulo",
-    "uf": "SP",
-    "status": "OUTRO",
-    "tipo_acao": 1
-  },
-  {
-    "coleta": 13,
-    "totalDocumento": 0,
-    "volume": null,
-    "peso": "0",
-    "destinatario": "Cliente ID 3",
-    "cidade": "São Paulo",
-    "uf": "SP",
-    "status": "OUTRO",
-    "tipo_acao": 4
-  },
-  {
-    "coleta": 14,
-    "totalDocumento": 0,
-    "volume": null,
-    "peso": "0",
-    "destinatario": "Cliente ID 3",
-    "cidade": "São Paulo",
-    "uf": "SP",
-    "status": "OUTRO",
-    "tipo_acao": 6
-  },
-  {
-    "coleta": 15,
-    "totalDocumento": 0,
-    "volume": null,
-    "peso": "0",
-    "destinatario": "Cliente ID 3",
-    "cidade": "São Paulo",
-    "uf": "SP",
-    "status": "OUTRO",
-    "tipo_acao": 8
-  },
-  {
-    "coleta": 16,
-    "totalDocumento": 0,
-    "volume": null,
-    "peso": "0",
-    "destinatario": "Cliente ID 3",
-    "cidade": "São Paulo",
-    "uf": "SP",
-    "status": "OUTRO",
-    "tipo_acao": 1
-  },
-  {
-    "coleta": 17,
-    "totalDocumento": 0,
-    "volume": null,
-    "peso": "0",
-    "destinatario": "Cliente ID 3",
-    "cidade": "São Paulo",
-    "uf": "SP",
-    "status": "OUTRO",
-    "tipo_acao": 4
-  },
-  {
-    "coleta": 18,
-    "totalDocumento": 0,
-    "volume": null,
-    "peso": "0",
-    "destinatario": "Cliente ID 3",
-    "cidade": "São Paulo",
-    "uf": "SP",
-    "status": "OUTRO",
-    "tipo_acao": 6
-  },
-  {
-    "coleta": 19,
-    "totalDocumento": 0,
-    "volume": null,
-    "peso": "0",
-    "destinatario": "Cliente ID 3",
-    "cidade": "São Paulo",
-    "uf": "SP",
-    "status": "OUTRO",
-    "tipo_acao": 8
-  },
-  {
-    "coleta": 20,
-    "totalDocumento": 0,
-    "volume": null,
-    "peso": "0",
-    "destinatario": "Cliente ID 3",
-    "cidade": "São Paulo",
-    "uf": "SP",
-    "status": "OUTRO",
-    "tipo_acao": 1
-  },
-  {
-    "coleta": 21,
-    "totalDocumento": 0,
-    "volume": null,
-    "peso": "0",
-    "destinatario": "Cliente ID 3",
-    "cidade": "São Paulo",
-    "uf": "SP",
-    "status": "OUTRO",
-    "tipo_acao": 4
-  },
-  {
-    "coleta": 22,
-    "totalDocumento": 0,
-    "volume": null,
-    "peso": "0",
-    "destinatario": "Cliente ID 3",
-    "cidade": "São Paulo",
-    "uf": "SP",
-    "status": "OUTRO",
-    "tipo_acao": 6
-  },
-  {
-    "coleta": 23,
-    "totalDocumento": 0,
-    "volume": null,
-    "peso": "0",
-    "destinatario": "Cliente ID 3",
-    "cidade": "São Paulo",
-    "uf": "SP",
-    "status": "OUTRO",
-    "tipo_acao": 8
-  },
-  {
-    "coleta": 24,
-    "totalDocumento": 0,
-    "volume": null,
-    "peso": "0",
-    "destinatario": "Cliente ID 3",
-    "cidade": "São Paulo",
-    "uf": "SP",
-    "status": "OUTRO",
-    "tipo_acao": 1
-  },
-  {
-    "coleta": 25,
-    "totalDocumento": 0,
-    "volume": null,
-    "peso": "0",
-    "destinatario": "Cliente ID 3",
-    "cidade": "São Paulo",
-    "uf": "SP",
-    "status": "OUTRO",
-    "tipo_acao": 4
-  },
-  {
-    "coleta": 26,
-    "totalDocumento": 0,
-    "volume": null,
-    "peso": "0",
-    "destinatario": "Cliente ID 3",
-    "cidade": "São Paulo",
-    "uf": "SP",
-    "status": "OUTRO",
-    "tipo_acao": 6
-  },
-  {
-    "coleta": 27,
-    "totalDocumento": 0,
-    "volume": null,
-    "peso": "0",
-    "destinatario": "Cliente ID 3",
-    "cidade": "São Paulo",
-    "uf": "SP",
-    "status": "OUTRO",
-    "tipo_acao": 8
-  },
-  {
-    "coleta": 28,
-    "totalDocumento": 0,
-    "volume": null,
-    "peso": "0",
-    "destinatario": "Cliente ID 3",
-    "cidade": "São Paulo",
-    "uf": "SP",
-    "status": "OUTRO",
-    "tipo_acao": 1
-  },
-  {
-    "coleta": 29,
-    "totalDocumento": 0,
-    "volume": null,
-    "peso": "0",
-    "destinatario": "Cliente ID 3",
-    "cidade": "São Paulo",
-    "uf": "SP",
-    "status": "OUTRO",
-    "tipo_acao": 4
-  },
-  {
-    "coleta": 30,
-    "totalDocumento": 1,
-    "volume": null,
-    "peso": "0",
-    "destinatario": "Cliente ID 3",
-    "cidade": "São Paulo",
-    "uf": "SP",
-    "status": "OUTRO",
-    "tipo_acao": 6
-  },
-  {
-    "coleta": 31,
-    "totalDocumento": 0,
-    "volume": null,
-    "peso": "0",
-    "destinatario": "Cliente ID 3",
-    "cidade": "São Paulo",
-    "uf": "SP",
-    "status": "OUTRO",
-    "tipo_acao": 8
-  },
-  {
-    "coleta": 32,
-    "totalDocumento": 0,
-    "volume": null,
-    "peso": "0",
-    "destinatario": "Cliente ID 3",
-    "cidade": "São Paulo",
-    "uf": "SP",
-    "status": "OUTRO"
-  },
-  {
-    "coleta": 33,
-    "totalDocumento": 0,
-    "volume": null,
-    "peso": "0",
-    "destinatario": "Cliente ID 3",
-    "cidade": "São Paulo",
-    "uf": "SP",
-    "status": "OUTRO"
-  },
-  {
-    "coleta": 34,
-    "totalDocumento": 0,
-    "volume": null,
-    "peso": "0",
-    "destinatario": "Cliente ID 3",
-    "cidade": "São Paulo",
-    "uf": "SP",
-    "status": "OUTRO"
+{
+  "info_coleta": [
+    {
+      "coleta": 3,
+      "totalDocumento": 1,
+      "volume": 322,
+      "peso": "3.000",
+      "destinatario": "Cliente pagador teste de sistema",
+      "cidade": "SAO PAULO",
+      "uf": "SP",
+      "status": "FINALIZADO",
+      "tipo_acao": 8
+    }
+  ],
+  "info_coleta_manifesto": [
+    {
+      "coleta": 6,
+      "totalDocumento": 1,
+      "volume": 1,
+      "peso": "1.000",
+      "destinatario": "Cliente pagador teste de sistema",
+      "cidade": "SAO PAULO",
+      "uf": "SP",
+      "status": "EM ABERTO",
+      "tipo_acao": 1
+    }
+  ],
+  "detalhes": {
+    "3": {
+      "Numero da coleta": 3,
+      "ocorrencias": []
+    },
+    "6": {
+      "Numero da coleta": 6,
+      "ocorrencias": [
+        {
+          "id": 321,
+          "documentos": "11",
+          "nome_ocorrencia": "Sem Registro",
+          "data_ocorrencia": "01/07/2025",
+          "hora_ocorrencia": "16:07",
+          "excluir": true
+        }
+      ]
+    }
   }
-]
+}

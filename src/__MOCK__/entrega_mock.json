@@ -1,282 +1,74 @@
-[
-  {
-    "documento": 223682,
-    "frete": 3,
-    "cte": "Sem informação",
-    "destinatario": "Ta na porta transportes e logistica ltda.",
-    "cidade": "COTIA",
-    "uf": "SP",
-    "status": "EM ABERTO",
-    "ocorrencia": "Sem Registro",
-    "tipo_acao": 1
-  },
-  {
-    "documento": 155,
-    "frete": 5,
-    "cte": "Sem informação",
-    "destinatario": "Beatriz pereira",
-    "cidade": "CAMPO GRANDE",
-    "uf": "MS",
-    "status": "EM ABERTO",
-    "ocorrencia": "Sem Registro",
-    "tipo_acao": 4
-  },
-  {
-    "documento": 155,
-    "frete": 6,
-    "cte": "Sem informação",
-    "destinatario": "Beatriz pereira",
-    "cidade": "CAMPO GRANDE",
-    "uf": "MS",
-    "status": "EM ABERTO",
-    "ocorrencia": "Sem Registro",
-    "tipo_acao": 6
-  },
-  {
-    "documento": 155,
-    "frete": 7,
-    "cte": "Sem informação",
-    "destinatario": "Beatriz pereira",
-    "cidade": "CAMPO GRANDE",
-    "uf": "MS",
-    "status": "EM ABERTO",
-    "ocorrencia": "Sem Registro",
-    "tipo_acao": 8
-  },
-  {
-    "documento": 155,
-    "frete": 8,
-    "cte": "Sem informação",
-    "destinatario": "Beatriz pereira",
-    "cidade": "CAMPO GRANDE",
-    "uf": "MS",
-    "status": "EM ABERTO",
-    "ocorrencia": "Sem Registro",
-    "tipo_acao": 9
-  },
-  {
-    "documento": 155,
-    "frete": 9,
-    "cte": "Sem informação",
-    "destinatario": "Beatriz pereira",
-    "cidade": "CAMPO GRANDE",
-    "uf": "MS",
-    "status": "EM ABERTO",
-    "ocorrencia": "Sem Registro",
-    "tipo_acao": 1
-  },
-  {
-    "documento": 155,
-    "frete": 10,
-    "cte": "Sem informação",
-    "destinatario": "Beatriz pereira",
-    "cidade": "CAMPO GRANDE",
-    "uf": "MS",
-    "status": "EM ABERTO",
-    "ocorrencia": "Sem Registro",
-    "tipo_acao": 4
-  },
-  {
-    "documento": 155,
-    "frete": 11,
-    "cte": "Sem informação",
-    "destinatario": "Beatriz pereira",
-    "cidade": "CAMPO GRANDE",
-    "uf": "MS",
-    "status": "EM ABERTO",
-    "ocorrencia": "Sem Registro",
-    "tipo_acao": 6
-  },
-  {
-    "documento": 155,
-    "frete": 12,
-    "cte": "Sem informação",
-    "destinatario": "Beatriz pereira",
-    "cidade": "CAMPO GRANDE",
-    "uf": "MS",
-    "status": "EM ABERTO",
-    "ocorrencia": "Sem Registro",
-    "tipo_acao": 8
-  },
-  {
-    "documento": 155,
-    "frete": 13,
-    "cte": "Sem informação",
-    "destinatario": "Beatriz pereira",
-    "cidade": "CAMPO GRANDE",
-    "uf": "MS",
-    "status": "EM ABERTO",
-    "ocorrencia": "Sem Registro",
-    "tipo_acao": 9
-  },
-  {
-    "documento": 155,
-    "frete": 14,
-    "cte": "Sem informação",
-    "destinatario": "Beatriz pereira",
-    "cidade": "CAMPO GRANDE",
-    "uf": "MS",
-    "status": "EM ABERTO",
-    "ocorrencia": "Sem Registro",
-    "tipo_acao": 1
-  },
-  {
-    "documento": 155,
-    "frete": 15,
-    "cte": "Sem informação",
-    "destinatario": "Beatriz pereira",
-    "cidade": "CAMPO GRANDE",
-    "uf": "MS",
-    "status": "EM ABERTO",
-    "ocorrencia": "Sem Registro",
-    "tipo_acao": 4
-  },
-  {
-    "documento": 155,
-    "frete": 21,
-    "cte": "Sem informação",
-    "destinatario": "Beatriz pereira",
-    "cidade": "CAMPO GRANDE",
-    "uf": "MS",
-    "status": "EM ABERTO",
-    "ocorrencia": "Sem Registro",
-    "tipo_acao": 6
-  },
-  {
-    "documento": 155,
-    "frete": 22,
-    "cte": "Sem informação",
-    "destinatario": "Beatriz pereira",
-    "cidade": "CAMPO GRANDE",
-    "uf": "MS",
-    "status": "EM ABERTO",
-    "ocorrencia": "Sem Registro",
-    "tipo_acao": 8
-  },
-  {
-    "documento": 155,
-    "frete": 23,
-    "cte": "Sem informação",
-    "destinatario": "Beatriz pereira",
-    "cidade": "CAMPO GRANDE",
-    "uf": "MS",
-    "status": "EM ABERTO",
-    "ocorrencia": "Sem Registro",
-    "tipo_acao": 9
-  },
-  {
-    "documento": 155,
-    "frete": 24,
-    "cte": "Sem informação",
-    "destinatario": "Beatriz pereira",
-    "cidade": "CAMPO GRANDE",
-    "uf": "MS",
-    "status": "EM ABERTO",
-    "ocorrencia": "Sem Registro",
-    "tipo_acao": 1
-  },
-  {
-    "documento": 155,
-    "frete": 25,
-    "cte": "Sem informação",
-    "destinatario": "Beatriz pereira",
-    "cidade": "CAMPO GRANDE",
-    "uf": "MS",
-    "status": "EM ABERTO",
-    "ocorrencia": "Sem Registro",
-    "tipo_acao": 4
-  },
-  {
-    "documento": 155,
-    "frete": 26,
-    "cte": "Sem informação",
-    "destinatario": "Beatriz pereira",
-    "cidade": "CAMPO GRANDE",
-    "uf": "MS",
-    "status": "EM ABERTO",
-    "ocorrencia": "Sem Registro",
-    "tipo_acao": 6
-  },
-  {
-    "documento": 155,
-    "frete": 27,
-    "cte": "Sem informação",
-    "destinatario": "Beatriz pereira",
-    "cidade": "CAMPO GRANDE",
-    "uf": "MS",
-    "status": "EM ABERTO",
-    "ocorrencia": "Sem Registro",
-    "tipo_acao": 8
-  },
-  {
-    "documento": 155,
-    "frete": 28,
-    "cte": "Sem informação",
-    "destinatario": "Beatriz pereira",
-    "cidade": "CAMPO GRANDE",
-    "uf": "MS",
-    "status": "EM ABERTO",
-    "ocorrencia": "Sem Registro",
-    "tipo_acao": 9
-  },
-  {
-    "documento": 155,
-    "frete": 29,
-    "cte": "Sem informação",
-    "destinatario": "Beatriz pereira",
-    "cidade": "CAMPO GRANDE",
-    "uf": "MS",
-    "status": "EM ABERTO",
-    "ocorrencia": "Sem Registro"
-  },
-  {
-    "documento": 155,
-    "frete": 30,
-    "cte": "Sem informação",
-    "destinatario": "Beatriz pereira",
-    "cidade": "CAMPO GRANDE",
-    "uf": "MS",
-    "status": "EM ABERTO",
-    "ocorrencia": "Sem Registro"
-  },
-  {
-    "documento": 155,
-    "frete": 31,
-    "cte": "Sem informação",
-    "destinatario": "Beatriz pereira",
-    "cidade": "CAMPO GRANDE",
-    "uf": "MS",
-    "status": "EM ABERTO",
-    "ocorrencia": "Sem Registro"
-  },
-  {
-    "documento": 155,
-    "frete": 32,
-    "cte": "Sem informação",
-    "destinatario": "Beatriz pereira",
-    "cidade": "CAMPO GRANDE",
-    "uf": "MS",
-    "status": "EM ABERTO",
-    "ocorrencia": "Sem Registro"
-  },
-  {
-    "documento": 155,
-    "frete": 33,
-    "cte": "Sem informação",
-    "destinatario": "Beatriz pereira",
-    "cidade": "CAMPO GRANDE",
-    "uf": "MS",
-    "status": "EM ABERTO",
-    "ocorrencia": "Sem Registro"
-  },
-  {
-    "documento": 155,
-    "frete": 34,
-    "cte": "Sem informação",
-    "destinatario": "Beatriz pereira",
-    "cidade": "CAMPO GRANDE",
-    "uf": "MS",
-    "status": "ENTREGUE",
-    "ocorrencia": "Entrega realizado normalmente"
+{
+  "info_entrega": [
+    {
+      "documento": 155,
+      "frete": 22,
+      "cte": "Sem informação",
+      "destinatario": "Beatriz pereira",
+      "cidade": "CAMPO GRANDE",
+      "uf": "MS",
+      "status": "EM ABERTO",
+      "ocorrencia": "Sem Registro",
+      "tipo_acao": 1
+    }
+  ],
+  "info_entrega_manifesto": [
+    {
+      "documento": 564,
+      "frete": 48,
+      "cte": "Sem informação",
+      "destinatario": "Boticario produtos de beleza ltda",
+      "cidade": "SAO JOSE DOS PINHAIS",
+      "uf": "PR",
+      "status": "EM ABERTO",
+      "ocorrencia": "Sem Registro",
+      "tipo_acao": 1
+    },
+    {
+      "documento": 564,
+      "frete": 49,
+      "cte": "Sem informação",
+      "destinatario": "Boticario produtos de beleza ltda",
+      "cidade": "SAO JOSE DOS PINHAIS",
+      "uf": "PR",
+      "status": "EM ABERTO",
+      "ocorrencia": "Sem Registro",
+      "tipo_acao": 1
+    }
+  ],
+  "detalhes": {
+    "22": {
+      "documento": 155,
+      "frete": "22",
+      "ocorrencias": []
+    },
+    "48": {
+      "documento": 564,
+      "frete": "48",
+      "ocorrencias": [
+        {
+          "id": 316,
+          "numero": 1,
+          "ocorrencia": "Sem Registro",
+          "data": "01/07/2025",
+          "hora": "16:03",
+          "excluir": true
+        }
+      ]
+    },
+    "49": {
+      "documento": 564,
+      "frete": "49",
+      "ocorrencias": [
+        {
+          "id": 318,
+          "numero": 1,
+          "ocorrencia": "Sem Registro",
+          "data": "01/07/2025",
+          "hora": "16:03",
+          "excluir": true
+        }
+      ]
+    }
   }
-]
+}

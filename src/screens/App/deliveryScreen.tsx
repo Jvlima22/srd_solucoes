@@ -37,6 +37,8 @@ import {
 } from "@components/GenericListCard";
 import { CustomModal } from "@components/CustomModal";
 import { FileUpload } from "@components/FileUpload";
+import { useAuth } from "@/hooks/useAuth";
+import { api } from "@/service/api";
 
 type DeliveryScreenParams = {
   manifestoId: string;
@@ -56,6 +58,7 @@ function getInputBorderColor(
 }
 
 export function DeliveryScreen() {
+  const { user } = useAuth();
   const navigation = useNavigation();
   const route = useRoute<DeliveryScreenRouteProp>();
   const manifestoId = route.params?.manifestoId;
@@ -151,14 +154,26 @@ export function DeliveryScreen() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await getInfoEntrega(manifestoId);
+      let response;
+      if (manifestoId) {
+        response = await getInfoEntrega(manifestoId);
+      } else if (user?.id) {
+        response = await api.get("/info-entrega", {
+          params: { id_motorista: user.id },
+        });
+      } else {
+        setEntregas([]);
+        setLoading(false);
+        return;
+      }
       setEntregas(response.data);
     } catch (error) {
       console.error("Error fetching data:", error);
+      setEntregas([]);
     } finally {
       setLoading(false);
     }
-  }, [manifestoId]);
+  }, [manifestoId, user?.id]);
 
   useEffect(() => {
     fetchData();

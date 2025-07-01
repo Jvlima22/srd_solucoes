@@ -6,6 +6,8 @@ import despachoJSON from "@/__MOCK__/despacho_mock.json";
 import retiradaJSON from "@/__MOCK__/retirada_mock.json";
 import transferenciaJSON from "@/__MOCK__/transferencia_mock.json";
 import manifestJSON from "@/__MOCK__/manifest_mock.json";
+import loginJSON from "@/__MOCK__/login_mock.json";
+import unidadesJSON from "@/__MOCK__/unidades_mock.json";
 
 const DEV = false;
 const timeout = 900;
@@ -17,7 +19,6 @@ const ROUTE_PATH_COLETA = "/info-coleta";
 const ROUTE_PATH_DESPACHO = "/info-despacho";
 const ROUTE_PATH_RETIRADA = "/info-retirada";
 const ROUTE_PATH_TRANSFERENCIA = "/info-transferencia";
-const ROUTE_PATH_MANIFEST = "/motoristas/manifestos";
 const ROUTE_PATH_TRANSPORTE_INICIAR = "/transporte/iniciar";
 const ROUTE_PATH_OCORRENCIA_ENTREGA = "/ocorrencia/entrega";
 const ROUTE_PATH_OCORRENCIA_COLETA = "/ocorrencia/coleta";
@@ -34,16 +35,7 @@ const auth_login = async (unidade: string, login: string, senha: string) => {
   if (DEV) {
     console.log("Mocking API response");
     const response = {
-      data: {
-        message: "Login realizado com sucesso",
-        usuario: {
-          id: 6,
-          nome: "Teste",
-          login: "TESTE",
-          nome_unidade: "AGENTE",
-          unidade: "AGENTE",
-        },
-      },
+      data: loginJSON,
       status: 200,
       statusText: "OK",
     };
@@ -63,13 +55,7 @@ const getUnidades = async (search?: string) => {
   if (DEV) {
     console.log("Mocking unidades API response");
     const response = {
-      data: {
-        unidades: [
-          { id: 1, nome: "AGENTE", identificador: "AGENTE" },
-          { id: 2, nome: "FILIAL SP", identificador: "FILIAL_SP" },
-          { id: 3, nome: "FILIAL RJ", identificador: "FILIAL_RJ" },
-        ],
-      },
+      data: unidadesJSON,
       status: 200,
       statusText: "OK",
     };
@@ -88,8 +74,12 @@ const getInfoEntrega = async (
 ): Promise<AxiosResponse<deliveryDTO[]>> => {
   if (DEV) {
     console.log("Mocking API response");
+    // Se tem manifestoId, retorna info_entrega_manifesto, senão info_entrega
+    const mockData = manifestoId
+      ? entregaJSON.info_entrega_manifesto
+      : entregaJSON.info_entrega;
     const response = {
-      data: entregaJSON,
+      data: mockData,
       status: 200,
       statusText: "OK",
     };
@@ -107,8 +97,12 @@ const getInfoColeta = async (
 ): Promise<AxiosResponse<coletaDTO[]>> => {
   if (DEV) {
     console.log("Mocking API response");
+    // Se tem manifestoId, retorna info_coleta_manifesto, senão info_coleta
+    const mockData = manifestoId
+      ? coletaJSON.info_coleta_manifesto
+      : coletaJSON.info_coleta;
     const response = {
-      data: coletaJSON,
+      data: mockData,
       status: 200,
       statusText: "OK",
       headers: {},
@@ -126,14 +120,12 @@ const getInfoDespacho = async (
 ): Promise<AxiosResponse<despachoDTO[]>> => {
   if (DEV) {
     console.log("Mocking API response");
+    // Se tem manifestoId, retorna info_despacho_manifesto, senão info_despacho
+    const mockData = manifestoId
+      ? despachoJSON.info_despacho_manifesto
+      : despachoJSON.info_despacho;
     const response = {
-      data: despachoJSON.map((item) => ({
-        ...item,
-        frete: item.total_frete,
-        minutaDespacho: item.minuta_numero,
-        CTE: item.minuta_numero.toString(),
-        destino: `${item.local}, ${item.cidade} - ${item.uf}`,
-      })),
+      data: mockData,
       status: 200,
       statusText: "OK",
       headers: {},
@@ -151,18 +143,12 @@ const getInfoRetirada = async (
 ): Promise<AxiosResponse<retiradaDTO[]>> => {
   if (DEV) {
     console.log("Mocking API response");
+    // Se tem manifestoId, retorna info_retirada_manifesto, senão info_retirada
+    const mockData = manifestoId
+      ? retiradaJSON.info_retirada_manifesto
+      : retiradaJSON.info_retirada;
     const response = {
-      data: [
-        {
-          frete: 20,
-          retirada: 2,
-          cte: "Sem Informação",
-          destino: "Agente de entrega teste",
-          cidade: "SAO PAULO",
-          uf: "SP",
-          status: "EM ABERTO",
-        },
-      ],
+      data: mockData,
       status: 200,
       statusText: "OK",
       headers: {},
@@ -180,8 +166,12 @@ const getInfoTransferencia = async (
 ): Promise<AxiosResponse<transferenciaDTO[]>> => {
   if (DEV) {
     console.log("Mocking API response");
+    // Se tem manifestoId, retorna info_transferencia_manifesto, senão info_transferencia
+    const mockData = manifestoId
+      ? transferenciaJSON.info_transferencia_manifesto
+      : transferenciaJSON.info_transferencia;
     const response = {
-      data: transferenciaJSON,
+      data: mockData,
       status: 200,
       statusText: "OK",
       headers: {},
@@ -443,20 +433,13 @@ const updateOcorrenciaDespacho = async (
 const getDetalhesEntrega = async (freteId: string): Promise<AxiosResponse> => {
   if (DEV) {
     console.log("Mocking API response");
+    const mockData = (entregaJSON.detalhes as any)[freteId] || {
+      documento: null,
+      frete: freteId,
+      ocorrencias: [],
+    };
     const response = {
-      data: {
-        documento: "123456",
-        frete: freteId,
-        ocorrencias: [
-          {
-            numero: 1,
-            ocorrencia: "Entrega realizado normalmente",
-            data: "01/01/2024",
-            hora: "10:00",
-            excluir: true,
-          },
-        ],
-      },
+      data: mockData,
       status: 200,
       statusText: "OK",
     };
@@ -476,19 +459,12 @@ const getDetalhesEntrega = async (freteId: string): Promise<AxiosResponse> => {
 const getDetalhesColeta = async (coletaId: string): Promise<AxiosResponse> => {
   if (DEV) {
     console.log("Mocking API response");
+    const mockData = (coletaJSON.detalhes as any)[coletaId] || {
+      "Numero da coleta": parseInt(coletaId),
+      ocorrencias: [],
+    };
     const response = {
-      data: {
-        "Numero da coleta": parseInt(coletaId),
-        ocorrencias: [
-          {
-            id: 1,
-            documentos: "DOC001, DOC002",
-            nome_ocorrencia: "Coleta realizado normalmente",
-            data_ocorrencia: "01/01/2024",
-            hora_ocorrencia: "10:00",
-          },
-        ],
-      },
+      data: mockData,
       status: 200,
       statusText: "OK",
     };
@@ -510,21 +486,12 @@ const getDetalhesRetirada = async (
 ): Promise<AxiosResponse> => {
   if (DEV) {
     console.log("Mocking API response");
+    const mockData = (retiradaJSON.detalhes as any)[retiradaId] || {
+      numero_retirada: retiradaId,
+      detalhes: [],
+    };
     const response = {
-      data: {
-        numero_retirada: retiradaId,
-        detalhes: [
-          {
-            freteId: "123",
-            numero_retirada: retiradaId,
-            documento: "DOC001",
-            ocorrencia: "retirada realizada",
-            data: "01/01/2024",
-            hora: "10:00",
-            excluir: true,
-          },
-        ],
-      },
+      data: mockData,
       status: 200,
       statusText: "OK",
     };
@@ -549,23 +516,14 @@ const getDetalhesTransferencia = async (
 ): Promise<AxiosResponse> => {
   if (DEV) {
     console.log("Mocking API response");
+    const key = `${transferenciaId}_${freteId}`;
+    const mockData = (transferenciaJSON.detalhes as any)[key] || {
+      numero_transferencia: transferenciaId,
+      freteId: freteId,
+      detalhes: [],
+    };
     const response = {
-      data: {
-        numero_transferencia: transferenciaId,
-        freteId: freteId,
-        detalhes: [
-          {
-            id: 136,
-            freteId: freteId,
-            numero_transferencia: transferenciaId,
-            documento: "DOC001",
-            ocorrencia: "transferencia realizada",
-            data: "01/01/2024",
-            hora: "10:00",
-            excluir: true,
-          },
-        ],
-      },
+      data: mockData,
       status: 200,
       statusText: "OK",
     };
@@ -589,29 +547,13 @@ const getDetalhesDespacho = async (
 ): Promise<AxiosResponse> => {
   if (DEV) {
     console.log("Mocking API response");
+    const mockData = (despachoJSON.detalhes as any)[despachoId] || {
+      numero_minuta: 0,
+      frete: Number(despachoId),
+      ocorrencias: [],
+    };
     const response = {
-      data: {
-        numero_minuta: 12345,
-        frete: Number(despachoId),
-        ocorrencias: [
-          {
-            id: 1,
-            documento: "DOC001",
-            ocorrencia: "despacho realizado",
-            data: "01/01/2024",
-            hora: "10:00",
-            excluir: true,
-          },
-          {
-            id: 2,
-            documento: "DOC002",
-            ocorrencia: "em transito para despacho",
-            data: "31/12/2023",
-            hora: "14:30",
-            excluir: true,
-          },
-        ],
-      },
+      data: mockData,
       status: 200,
       statusText: "OK",
     };

@@ -1,112 +1,83 @@
-[
-  {
-    "minuta_numero": 58,
-    "total_frete": 2,
-    "total_documento": 0,
-    "total_volume": 6,
-    "local": "Cia teste de sistema",
-    "cidade": "JUNDIAÍ",
-    "uf": "SP",
-    "status": "EM ABERTO"
-  },
-  {
-    "minuta_numero": 57,
-    "total_frete": 2,
-    "total_documento": 0,
-    "total_volume": 6,
-    "local": "Cia teste de sistema",
-    "cidade": "JUNDIAÍ",
-    "uf": "SP",
-    "status": "EM ABERTO"
-  },
-  {
-    "minuta_numero": 56,
-    "total_frete": 2,
-    "total_documento": 0,
-    "total_volume": 6,
-    "local": "Cia teste de sistema",
-    "cidade": "JUNDIAÍ",
-    "uf": "SP",
-    "status": "EM ABERTO"
-  },
-  {
-    "minuta_numero": 55,
-    "total_frete": 2,
-    "total_documento": 0,
-    "total_volume": 6,
-    "local": "Cia teste de sistema",
-    "cidade": "JUNDIAÍ",
-    "uf": "SP",
-    "status": "EM ABERTO"
-  },
-  {
-    "minuta_numero": 54,
-    "total_frete": 2,
-    "total_documento": 0,
-    "total_volume": 6,
-    "local": "Cia teste de sistema",
-    "cidade": "JUNDIAÍ",
-    "uf": "SP",
-    "status": "EM ABERTO"
-  },
-  {
-    "minuta_numero": 53,
-    "total_frete": 2,
-    "total_documento": 0,
-    "total_volume": 6,
-    "local": "Cia teste de sistema",
-    "cidade": "JUNDIAÍ",
-    "uf": "SP",
-    "status": "EM ABERTO"
-  },
-  {
-    "minuta_numero": 52,
-    "total_frete": 2,
-    "total_documento": 0,
-    "total_volume": 6,
-    "local": "Cia teste de sistema",
-    "cidade": "JUNDIAÍ",
-    "uf": "SP",
-    "status": "EM ABERTO"
-  },
-  {
-    "minuta_numero": 51,
-    "total_frete": 2,
-    "total_documento": 0,
-    "total_volume": 6,
-    "local": "Cia teste de sistema",
-    "cidade": "JUNDIAÍ",
-    "uf": "SP",
-    "status": "EM ABERTO"
-  },
-  {
-    "minuta_numero": 50,
-    "total_frete": 2,
-    "total_documento": 0,
-    "total_volume": 6,
-    "local": "Cia teste de sistema",
-    "cidade": "JUNDIAÍ",
-    "uf": "SP",
-    "status": "EM ABERTO"
-  },
-  {
-    "minuta_numero": 49,
-    "total_frete": 2,
-    "total_documento": 0,
-    "total_volume": 6,
-    "local": "Cia teste de sistema",
-    "cidade": "JUNDIAÍ",
-    "uf": "SP",
-    "status": "EM ABERTO"
-  },
-  {
-    "minuta_numero": 48,
-    "total_frete": 2,
-    "total_documento": 0,
-    "total_volume": 6,
-    "local": "Cia teste de sistema",
-    "cidade": "JUNDIAÍ",
-    "uf": "SP",
-    "status": "EM ABERTO"
+{
+  "info_retirada": [
+    {
+      "frete": 21,
+      "retirada": 3,
+      "cte": "Sem Informação",
+      "destino": "Latam ltda",
+      "cidade": "FLORES DA CUNHA",
+      "uf": "RS",
+      "status": "EM ABERTO",
+      "tipo_acao": 1
+    },
+    {
+      "frete": 47,
+      "retirada": 4,
+      "cte": "Sem Informação",
+      "destino": "Dfl transferencia de cargas ltda",
+      "cidade": "SAO BERNARDO DO CAMPO",
+      "uf": "SP",
+      "status": "EM ABERTO",
+      "tipo_acao": 1
+    }
+  ],
+  "info_retirada_manifesto": [
+    {
+      "frete": 51,
+      "retirada": 5,
+      "cte": "Sem Informação",
+      "destino": "J.v de brito transportes me",
+      "cidade": "SAO JOSE DO RIO PRETO",
+      "uf": "SP",
+      "status": "EM ABERTO",
+      "tipo_acao": 1
+    }
+  ],
+  "detalhes": {
+    "3": {
+      "numero_retirada": 3,
+      "detalhes": [
+        {
+          "id": 40,
+          "freteId": 21,
+          "numero_retirada": 3,
+          "documento": 155,
+          "ocorrencia": "Sem Registro",
+          "data": "11/06/2025",
+          "hora": "14:05",
+          "excluir": true
+        }
+      ]
+    },
+    "4": {
+      "numero_retirada": 4,
+      "detalhes": [
+        {
+          "id": 314,
+          "freteId": 47,
+          "numero_retirada": 4,
+          "documento": 564,
+          "ocorrencia": "Sem Registro",
+          "data": "01/07/2025",
+          "hora": "16:03",
+          "excluir": true
+        }
+      ]
+    },
+    "5": {
+      "numero_retirada": 5,
+      "detalhes": [
+        {
+          "id": 323,
+          "freteId": 51,
+          "numero_retirada": 5,
+          "documento": 564,
+          "ocorrencia": "Sem Registro",
+          "data": "01/07/2025",
+          "hora": "16:13",
+          "excluir": true
+        }
+      ]
+    }
   }
-]
+}

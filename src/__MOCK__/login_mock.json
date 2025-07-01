@@ -1,0 +1,10 @@
+{
+  "message": "Login realizado com sucesso",
+  "usuario": {
+    "id": 6,
+    "nome": "Motorista agregado",
+    "login": "motorista",
+    "nome_unidade": "teste",
+    "unidade": "teste"
+  }
+}

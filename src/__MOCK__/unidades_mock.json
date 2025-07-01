@@ -1,0 +1,9 @@
+{
+  "unidades": [
+    { "id": 4, "nome": "d2r", "identificador": "d2r" },
+    { "id": 2, "nome": "gamafsalog", "identificador": "gamafsalog" },
+    { "id": 3, "nome": "gpapetrallas", "identificador": "gpapetrallas" },
+    { "id": 0, "nome": "homologacao", "identificador": "homologacao" },
+    { "id": 1, "nome": "teste", "identificador": "teste" }
+  ]
+}

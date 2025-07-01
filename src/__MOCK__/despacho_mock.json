@@ -1,145 +1,53 @@
-[
-  {
-    "minuta_numero": 47,
-    "total_frete": 1,
-    "total_documento": 0,
-    "total_volume": 2,
-    "local": "Cia teste de sistema",
-    "cidade": "JUNDIAÍ",
-    "uf": "SP",
-    "status": "OUTRO",
-    "tipo_acao": 1
-  },
-  {
-    "minuta_numero": 46,
-    "total_frete": 1,
-    "total_documento": 0,
-    "total_volume": 2,
-    "local": "Cia teste de sistema",
-    "cidade": "JUNDIAÍ",
-    "uf": "SP",
-    "status": "OUTRO",
-    "tipo_acao": 4
-  },
-  {
-    "minuta_numero": 45,
-    "total_frete": 1,
-    "total_documento": 0,
-    "total_volume": 2,
-    "local": "Cia teste de sistema",
-    "cidade": "JUNDIAÍ",
-    "uf": "SP",
-    "status": "OUTRO",
-    "tipo_acao": 8
-  },
-  {
-    "minuta_numero": 44,
-    "total_frete": 1,
-    "total_documento": 0,
-    "total_volume": 2,
-    "local": "Cia teste de sistema",
-    "cidade": "JUNDIAÍ",
-    "uf": "SP",
-    "status": "OUTRO",
-    "tipo_acao": 1
-  },
-  {
-    "minuta_numero": 43,
-    "total_frete": 1,
-    "total_documento": 0,
-    "total_volume": 2,
-    "local": "Cia teste de sistema",
-    "cidade": "JUNDIAÍ",
-    "uf": "SP",
-    "status": "OUTRO",
-    "tipo_acao": 4
-  },
-  {
-    "minuta_numero": 42,
-    "total_frete": 1,
-    "total_documento": 0,
-    "total_volume": 2,
-    "local": "Cia teste de sistema",
-    "cidade": "JUNDIAÍ",
-    "uf": "SP",
-    "status": "OUTRO",
-    "tipo_acao": 8
-  },
-  {
-    "minuta_numero": 41,
-    "total_frete": 1,
-    "total_documento": 0,
-    "total_volume": 2,
-    "local": "Cia teste de sistema",
-    "cidade": "JUNDIAÍ",
-    "uf": "SP",
-    "status": "OUTRO",
-    "tipo_acao": 1
-  },
-  {
-    "minuta_numero": 40,
-    "total_frete": 1,
-    "total_documento": 0,
-    "total_volume": 2,
-    "local": "Cia teste de sistema",
-    "cidade": "JUNDIAÍ",
-    "uf": "SP",
-    "status": "OUTRO",
-    "tipo_acao": 4
-  },
-  {
-    "minuta_numero": 39,
-    "total_frete": 1,
-    "total_documento": 0,
-    "total_volume": 2,
-    "local": "Cia teste de sistema",
-    "cidade": "JUNDIAÍ",
-    "uf": "SP",
-    "status": "OUTRO",
-    "tipo_acao": 8
-  },
-  {
-    "minuta_numero": 38,
-    "total_frete": 1,
-    "total_documento": 0,
-    "total_volume": 2,
-    "local": "Cia teste de sistema",
-    "cidade": "JUNDIAÍ",
-    "uf": "SP",
-    "status": "OUTRO",
-    "tipo_acao": 1
-  },
-  {
-    "minuta_numero": 37,
-    "total_frete": 1,
-    "total_documento": 0,
-    "total_volume": 2,
-    "local": "Cia teste de sistema",
-    "cidade": "JUNDIAÍ",
-    "uf": "SP",
-    "status": "OUTRO",
-    "tipo_acao": 4
-  },
-  {
-    "minuta_numero": 36,
-    "total_frete": 1,
-    "total_documento": 0,
-    "total_volume": 2,
-    "local": "Cia teste de sistema",
-    "cidade": "JUNDIAÍ",
-    "uf": "SP",
-    "status": "OUTRO",
-    "tipo_acao": 8
-  },
-  {
-    "minuta_numero": 35,
-    "total_frete": 1,
-    "total_documento": 0,
-    "total_volume": 2,
-    "local": "Cia teste de sistema",
-    "cidade": "JUNDIAÍ",
-    "uf": "SP",
-    "status": "OUTRO",
-    "tipo_acao": 1
+{
+  "info_despacho": [
+    {
+      "frete": 18,
+      "minutaDespacho": 2,
+      "CTE": "Sem Informação",
+      "destino": "Agente de entrega teste",
+      "cidade": "SAO PAULO",
+      "uf": "SP",
+      "status": "EM ABERTO",
+      "tipo_acao": 1
+    }
+  ],
+  "info_despacho_manifesto": [
+    {
+      "frete": 44,
+      "minutaDespacho": 5,
+      "CTE": "Sem Informação",
+      "destino": "Agente de entrega teste",
+      "cidade": "SAO PAULO",
+      "uf": "SP",
+      "status": "EM ABERTO",
+      "tipo_acao": 1
+    },
+    {
+      "frete": 45,
+      "minutaDespacho": 5,
+      "CTE": "Sem Informação",
+      "destino": "Agente de entrega teste",
+      "cidade": "SAO PAULO",
+      "uf": "SP",
+      "status": "EM ABERTO",
+      "tipo_acao": 1
+    }
+  ],
+  "detalhes": {
+    "18": {
+      "numero_minuta": 2,
+      "frete": 18,
+      "ocorrencias": []
+    },
+    "44": {
+      "numero_minuta": 5,
+      "frete": 44,
+      "ocorrencias": []
+    },
+    "45": {
+      "numero_minuta": 5,
+      "frete": 45,
+      "ocorrencias": []
+    }
   }
-]
+}

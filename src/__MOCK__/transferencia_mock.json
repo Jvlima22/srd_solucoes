@@ -1,29 +1,53 @@
-[
-  {
-    "frete": 19,
-    "transferencia": 2,
-    "cte": "Sem Informação",
-    "destino": "Filial teste de sistema",
-    "cidade": "SAO PAULO",
-    "uf": "SP",
-    "status": "EM ABERTO"
-  },
-  {
-    "frete": 18,
-    "transferencia": 3,
-    "cte": "Sem Informação",
-    "destino": "Filial teste de sistema",
-    "cidade": "SAO PAULO",
-    "uf": "SP",
-    "status": "EM ABERTO"
-  },
-  {
-    "frete": 17,
-    "transferencia": 4,
-    "cte": "Sem Informação",
-    "destino": "Filial teste de sistema",
-    "cidade": "SAO PAULO",
-    "uf": "SP",
-    "status": "EM ABERTO"
+{
+  "info_transferencia": [
+    {
+      "frete": 15,
+      "transferencia": 3,
+      "cte": "Sem Informação",
+      "destino": "Filial teste de sistema",
+      "cidade": "SAO PAULO",
+      "uf": "SP",
+      "status": "EM ABERTO",
+      "tipo_acao": 1
+    },
+    {
+      "frete": 46,
+      "transferencia": 4,
+      "cte": "Sem Informação",
+      "destino": "Filial teste de sistema",
+      "cidade": "SAO PAULO",
+      "uf": "SP",
+      "status": "EM ABERTO",
+      "tipo_acao": 1
+    }
+  ],
+  "info_transferencia_manifesto": [
+    {
+      "frete": 50,
+      "transferencia": 5,
+      "cte": "Sem Informação",
+      "destino": "Filial teste de sistema",
+      "cidade": "SAO PAULO",
+      "uf": "SP",
+      "status": "EM ABERTO",
+      "tipo_acao": 1
+    }
+  ],
+  "detalhes": {
+    "3_15": {
+      "numero_transferencia": 3,
+      "freteId": 15,
+      "detalhes": []
+    },
+    "4_46": {
+      "numero_transferencia": 4,
+      "freteId": 46,
+      "detalhes": []
+    },
+    "5_50": {
+      "numero_transferencia": 5,
+      "freteId": 50,
+      "detalhes": []
+    }
   }
-]
+}

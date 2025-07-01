@@ -143,7 +143,7 @@ export function TransferScreen() {
 
   const onRefresh = async () => {
     if (!manifestoId) {
-      console.error("ManifestoId is required");
+      // Não exibe erro, apenas retorna silenciosamente
       return;
     }
 

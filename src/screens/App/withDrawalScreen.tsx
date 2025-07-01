@@ -36,6 +36,8 @@ import {
   GenericListCardConfigs,
 } from "@components/GenericListCard";
 import { CustomModal } from "@components/CustomModal";
+import { useAuth } from "@/hooks/useAuth";
+import { api } from "@/service/api";
 
 type WithdrawalScreenParams = {
   manifestoId: string;
@@ -55,6 +57,7 @@ function getInputBorderColor(
 }
 
 export function WithDrawalScreen() {
+  const { user } = useAuth();
   const route = useRoute<WithdrawalScreenRouteProp>();
   const manifestoId = route.params?.manifestoId;
   const [retiradas, setRetiradas] = useState<retiradaDTO[]>([]);
@@ -122,17 +125,28 @@ export function WithDrawalScreen() {
   }, [selectedOcorrencia, data, hora]);
 
   const fetchData = useCallback(async () => {
-    if (!manifestoId) return;
     setLoading(true);
     try {
-      const response = await getInfoRetirada(manifestoId);
+      let response;
+      if (manifestoId) {
+        response = await getInfoRetirada(manifestoId);
+      } else if (user?.id) {
+        response = await api.get("/info-retirada", {
+          params: { id_motorista: user.id },
+        });
+      } else {
+        setRetiradas([]);
+        setLoading(false);
+        return;
+      }
       setRetiradas(response.data);
     } catch (error) {
       console.error("Error fetching data:", error);
+      setRetiradas([]);
     } finally {
       setLoading(false);
     }
-  }, [manifestoId]);
+  }, [manifestoId, user?.id]);
 
   const onRefresh = async () => {
     setRefreshing(true);
