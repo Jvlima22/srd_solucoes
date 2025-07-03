@@ -45,6 +45,11 @@ interface GenericListCardProps {
   onLancarOcorrencia: (item: DataItem) => void;
 }
 
+// Função utilitária para pegar o valor do manifesto independente do nome do campo
+function getManifestoValue(item: any): number | string | undefined {
+  return item.manifestoId ?? item.id_manifesto ?? item.manifesto;
+}
+
 export function GenericListCard({
   data,
   config,
@@ -168,6 +173,24 @@ export function GenericListCard({
               )}
 
               <View className="flex-col">
+                {/* Renderiza Manifesto só se existir */}
+                {(() => {
+                  const manifestoValue = getManifestoValue(item);
+                  if (
+                    manifestoValue !== undefined &&
+                    manifestoValue !== null &&
+                    manifestoValue !== ""
+                  ) {
+                    return (
+                      <View className="flex-row items-center gap-3">
+                        <P className="text-sm font-bold">
+                          Manifesto - {manifestoValue}
+                        </P>
+                      </View>
+                    );
+                  }
+                  return null;
+                })()}
                 {config.fields.map((field, index) => {
                   // Não exibir o campo 'Coleta' na lista se for do tipo coleta
                   if (config.type === "coleta" && field.key === "coleta") {
