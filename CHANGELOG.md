@@ -155,8 +155,8 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 Para suporte ou dúvidas sobre as versões, entre em contato:
 
-- Email: [seu-email@exemplo.com](mailto:seu-email@exemplo.com)
-- Issues: [GitHub Issues](https://github.com/seu-usuario/srd-solucoes/issues)
+- Email: [seu-email@exemplo.com](targetlogsolutions@outlook.com)
+- Issues: [GitHub Issues](https://github.com/Jvlima22/srd_solucoes/issues)
 
 ---
 
